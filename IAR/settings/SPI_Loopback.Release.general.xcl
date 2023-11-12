@@ -1,0 +1,13 @@
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.5\arm\bin\armproc.dll" 
+
+"C:\Program Files (x86)\Nuvoton Tools\Nu-Link_IAR\Nu-Link_IAR.dll" 
+
+"D:\Project\iMON_ES\Nuvoton\iMON_ES_src\iMON_ES_Comm\IAR\Release\Exe\SPI_Loopback.out" 
+
+--plugin "C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.5\arm\bin\armbat.dll" 
+
+--flash_loader "C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.5\arm\config\flashloader\Nuvoton\FlashM4xxxG.board" 
+
+
+
+

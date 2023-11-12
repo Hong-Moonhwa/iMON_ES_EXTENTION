@@ -1,0 +1,17 @@
+"--endian=little" 
+
+"--cpu=Cortex-M4" 
+
+"--fpu=VFPv4_SP" 
+
+"-p" 
+
+"C:\Program Files (x86)\IAR Systems\Embedded Workbench 7.5\arm\CONFIG\debugger\Nuvoton\M453VG6AE.ddf" 
+
+"--semihosting" 
+
+"--device=M453VG6AE" 
+
+
+
+

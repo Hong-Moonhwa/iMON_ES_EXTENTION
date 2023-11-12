@@ -1,0 +1,891 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <fileChecksum>1160158898</fileChecksum>
+  <configuration>
+    <name>Release</name>
+    <outputs>
+      <file>$PROJ_DIR$\..\main.c</file>
+      <file>$PROJ_DIR$\Release\Obj\gpio.__cstat.et</file>
+      <file>$PROJ_DIR$\..\Library\Device\Nuvoton\M451Series\Source\IAR\startup_M451Series.s</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\src\clk.c</file>
+      <file>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\nuconsole\NuConsole.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\src\i2c.c</file>
+      <file>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\nuconsole\NuConsole_Config.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\src\retarget.c</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\src\crc.c</file>
+      <file>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\nuconsole\NuConsole.c</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\src\spi.c</file>
+      <file>$PROJ_DIR$\..\Library\Device\Nuvoton\M451Series\Source\system_M451Series.c</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\src\gpio.c</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\src\uart.c</file>
+      <file>$PROJ_DIR$\Release\Obj\gpio.pbi</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\src\timer.c</file>
+      <file>$TOOLKIT_DIR$\inc\c\ystdio.h</file>
+      <file>$PROJ_DIR$\Release\Obj\system_NUC029xAN.__cstat.et</file>
+      <file>$TOOLKIT_DIR$\inc\c\DLib_Product_string.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\yvals.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\wdt.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\DLib_Threads.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\clk.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\ysizet.h</file>
+      <file>$PROJ_DIR$\Release\Obj\NuConsole.pbi</file>
+      <file>$PROJ_DIR$\Release\Obj\uart.o</file>
+      <file>$PROJ_DIR$\Release\Obj\timer.__cstat.et</file>
+      <file>$PROJ_DIR$\Release\Obj\retarget.o</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\hdiv.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\CMSIS\Include\core_cmFunc.h</file>
+      <file>$PROJ_DIR$\Release\Obj\uart.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\c\ycheck.h</file>
+      <file>$PROJ_DIR$\Release\Exe\SPI_Loopback.bin</file>
+      <file>$PROJ_DIR$\Release\Obj\gpio.o</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\gpio.h</file>
+      <file>$PROJ_DIR$\Release\Obj\system_NUC029xAN.pbi</file>
+      <file>$PROJ_DIR$\Release\Obj\spi.__cstat.et</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\acmp.h</file>
+      <file>$TOOLKIT_DIR$\lib\rt7M_tl.a</file>
+      <file>$TOOLKIT_DIR$\inc\c\stdint.h</file>
+      <file>$PROJ_DIR$\Release\Obj\main.pbi</file>
+      <file>$TOOLKIT_DIR$\lib\dl7M_tlf.a</file>
+      <file>$PROJ_DIR$\Release\Obj\crc.__cstat.et</file>
+      <file>$PROJ_DIR$\Release\Obj\i2c.__cstat.et</file>
+      <file>$PROJ_DIR$\Release\Obj\clk.o</file>
+      <file>$TOOLKIT_DIR$\lib\m7M_tls.a</file>
+      <file>$PROJ_DIR$\Release\Obj\startup_NUC029xAN.o</file>
+      <file>$PROJ_DIR$\Release\Obj\NuConsole_Retarget.o</file>
+      <file>$PROJ_DIR$\Release\Obj\SPI_Loopback.pbd</file>
+      <file>$PROJ_DIR$\Release\Obj\spi.pbi</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\fmc.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\string.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\DLib_Config_Full.h</file>
+      <file>$PROJ_DIR$\Release\Obj\main.o</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\adc.h</file>
+      <file>$PROJ_DIR$\Release\Obj\uart.__cstat.et</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\uart.c</file>
+      <file>$TOOLKIT_DIR$\lib\shb_l.a</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\pwm.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\sys.h</file>
+      <file>$PROJ_DIR$\Release\Exe\SPI_Loopback.out</file>
+      <file>$PROJ_DIR$\SPI_Loopback.icf</file>
+      <file>$PROJ_DIR$\Release\Obj\NuConsole_Retarget.__cstat.et</file>
+      <file>$TOOLKIT_DIR$\inc\c\cmsis_iar.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\CMSIS\Include\core_cm0.h</file>
+      <file>$PROJ_DIR$\Release\Obj\retarget.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\c\DLib_Defaults.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\retarget.c</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\ebi.h</file>
+      <file>$PROJ_DIR$\Release\Obj\NuConsole_Retarget.pbi</file>
+      <file>$PROJ_DIR$\Release\Obj\main.__cstat.et</file>
+      <file>$PROJ_DIR$\Release\Obj\spi.o</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\timer.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\NUC029xAN\Source\system_NUC029xAN.c</file>
+      <file>$PROJ_DIR$\Release\Obj\clk.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\c\xencoding_limits.h</file>
+      <file>$PROJ_DIR$\Release\Obj\NuConsole.o</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\M451Series\Source\system_M451Series.c</file>
+      <file>$TOOLKIT_DIR$\inc\c\stdio.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\spi.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\pdma.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\i2c.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\intrinsics.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\sc.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\uart.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\ebi.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\can.h</file>
+      <file>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\nuconsole\NuConsole_Retarget.c</file>
+      <file>$PROJ_DIR$\Release\Obj\retarget.__cstat.et</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\wwdt.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\spi.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\DLib_Product.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\retarget.c</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\clk.c</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\uart.c</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\dac.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\gpio.h</file>
+      <file>$PROJ_DIR$\..\Library\CMSIS\Include\core_cmFunc.h</file>
+      <file>$PROJ_DIR$\..\Library\Device\Nuvoton\M451Series\Include\system_M451Series.h</file>
+      <file>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\StdDriver\src\retarget.c</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\uart.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\eadc.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\wdt.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\M451Series\Source\IAR\startup_M451Series.s</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\spi.c</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\acmp.h</file>
+      <file>$PROJ_DIR$\Release\Obj\system_NUC029xAN.o</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\rtc.h</file>
+      <file>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\StdDriver\src\uart.c</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\usbd.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\tk.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\sys.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\timer.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\acmp.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\NUC029xAN\Source\IAR\startup_NUC029xAN.s</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\wwdt.h</file>
+      <file>$PROJ_DIR$\Release\Obj\clk.__cstat.et</file>
+      <file>$PROJ_DIR$\Release\Obj\system_M451Series.__cstat.et</file>
+      <file>$PROJ_DIR$\..\Library\CMSIS\Include\core_cmInstr.h</file>
+      <file>$PROJ_DIR$\Release\Obj\startup_M451Series.o</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\NUC029xAN\Include\system_NUC029xAN.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\ebi.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\spi.c</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\pdma.h</file>
+      <file>$PROJ_DIR$\Release\Obj\system_M451Series.pbi</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\clk.h</file>
+      <file>$PROJ_DIR$\..\Library\CMSIS\Include\core_cm4_simd.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\clk.c</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\crc.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\fmc.h</file>
+      <file>$PROJ_DIR$\Release\Obj\NuConsole.__cstat.et</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\CMSIS\Include\core_cmInstr.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\otg.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\i2c.h</file>
+      <file>$PROJ_DIR$\Release\Obj\i2c.pbi</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\sys.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\uart.h</file>
+      <file>$PROJ_DIR$\..\Library\CMSIS\Include\arm_math.h</file>
+      <file>$PROJ_DIR$\Release\Obj\timer.pbi</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\M451Series\Include\system_M451Series.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\can.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\spi.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\crc.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\sc.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\timer.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\gpio.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\rtc.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\NUC029xAN\Include\NUC029xAN.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\ymath.h</file>
+      <file>$PROJ_DIR$\Release\Obj\i2c.o</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\otg.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\eadc.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\scuart.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\math.h</file>
+      <file>$PROJ_DIR$\..\Library\CMSIS\Include\core_cm4.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\dac.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\clk.h</file>
+      <file>$PROJ_DIR$\..\Library\Device\Nuvoton\M451Series\Include\M451Series.h</file>
+      <file>$PROJ_DIR$\..\Library\StdDriverM451\inc\pwm.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\CMSIS\Include\core_cm4_simd.h</file>
+      <file>$PROJ_DIR$\Release\Obj\crc.pbi</file>
+      <file>$PROJ_DIR$\Release\Obj\timer.o</file>
+      <file>$PROJ_DIR$\Release\Obj\crc.o</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\usbd.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\scuart.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\pwm.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\fmc.h</file>
+      <file>$TOOLKIT_DIR$\inc\c\xtgmath.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\CMSIS\Include\core_cm4.h</file>
+      <file>$PROJ_DIR$\Release\Obj\system_M451Series.o</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\M451Series\Include\M451Series.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\wdt.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriver\inc\i2c.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\wwdt.h</file>
+      <file>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\inc\tk.h</file>
+    </outputs>
+    <file>
+      <name>[ROOT_NODE]</name>
+      <outputs>
+        <tool>
+          <name>ILINK</name>
+          <file> 60</file>
+        </tool>
+      </outputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\main.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 40</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 53</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 70</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16 157 154 39 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132 137 51 18 153 148 167</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\Device\Nuvoton\M451Series\Source\IAR\startup_M451Series.s</name>
+      <outputs>
+        <tool>
+          <name>AARM</name>
+          <file> 119</file>
+        </tool>
+      </outputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\StdDriverM451\src\clk.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 74</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 44</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 116</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 39 152 142 158 19 31 157 154 111 102 86 126 91 82 63 98 96 107 90 101 129 110 118 52 125 133 85 112 115 83 105 95 109 100 80 132 97 66 75 21</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 157 154 39 31 19 66 52 91 75 21 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\StdDriverM451\src\i2c.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 134</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 149</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 43</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 80 85 31 105 98 125 115 109 118 52 157 154 39 133 112 83 95 100 132 126 19 91 82 63 111 96 142 107 102 90 152 101 86 129 158 110 97 66 75 21</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 157 154 39 31 19 66 52 91 75 21 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\StdDriverM451\src\retarget.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 65</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 27</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 88</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 132 98 19 66 112 21 95 16 75 133 83 100 126 157 31 23 52 91 154 39 125 85 115 105 109 80 118 82 63 78 111 96 142 107 102 90 152 101 86 129 158 110 97</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16 157 154 39 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\StdDriverM451\src\crc.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 160</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 162</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 42</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 152 98 142 158 19 31 157 111 102 86 126 91 82 63 154 39 96 107 90 101 129 110 118 52 125 133 85 112 115 83 105 95 109 100 80 132 97 66 75 21</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 157 154 39 31 19 66 52 91 75 21 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\nuconsole\NuConsole.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 24</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 76</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 130</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 52 31 23 6 19 91 18 51 39 4 66 75 21</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 4 39 31 19 66 52 91 75 21 6 51 23 18</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\StdDriverM451\src\spi.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 49</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 71</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 36</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 152 154 142 158 19 31 157 39 111 102 86 126 91 82 63 98 96 107 90 101 129 110 118 52 125 133 85 112 115 83 105 95 109 100 80 132 97 66 75 21</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 157 154 39 31 19 66 52 91 75 21 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\Device\Nuvoton\M451Series\Source\system_M451Series.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 124</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 169</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 117</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 39 152 142 158 19 31 157 154 111 102 86 126 91 82 63 98 96 107 90 101 129 110 118 52 125 133 85 112 115 83 105 95 109 100 80 132 97 66 75 21</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 157 154 39 31 19 66 52 91 75 21 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\StdDriverM451\src\gpio.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 14</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 33</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 1</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 152 39 142 158 19 31 157 154 111 102 86 126 91 82 63 98 96 107 90 101 129 110 118 52 125 133 85 112 115 83 105 95 109 100 80 132 97 66 75 21</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 157 154 39 31 19 66 52 91 75 21 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\StdDriverM451\src\uart.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 30</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 25</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 55</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 19 101 75 16 107 110 118 157 66 21 98 96 90 129 82 63 31 23 52 91 154 39 111 142 102 152 86 158 126 78 125 133 85 112 115 83 105 95 109 100 80 132 97</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16 157 154 39 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Library\StdDriverM451\src\timer.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 138</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 161</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 26</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 80 98 85 31 105 125 115 109 118 52 157 154 39 133 112 83 95 100 132 126 19 91 82 63 111 96 142 107 102 90 152 101 86 129 158 110 97 66 75 21</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 157 154 39 31 19 66 52 91 75 21 118 63 82 97 126 98 111 125 96 133 142 85 107 112 102 115 90 83 152 105 101 95 86 109 129 100 158 80 110 132</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\uart.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 30</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 25</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 55</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 66 23 31 75 21 19 16 52 91 78</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Release\Exe\SPI_Loopback.out</name>
+      <outputs>
+        <tool>
+          <name>OBJCOPY</name>
+          <file> 32</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ILINK</name>
+          <file> 61 44 162 33 149 53 76 27 71 119 169 161 25 57 38 45 41</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\retarget.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 65</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 27</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 88</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 54 91 147 31 20 23 52 64 172 37 19 16 66 75 21 120 59 50 79 84 131 63 78 22 68 34 58 72 89 28 39 29 82</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16 147 64 39 131 63 82 29 120 59 22 54 68 50 34 172 58 79 72 20 89 84 28 37</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\NUC029xAN\Source\system_NUC029xAN.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 35</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 106</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 17</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 19 21 16 31 39 23 66 75 78 52 91</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16 39 147 64 131 63 82 29 120 59 22 54 68 50 34 172 58 79 72 20 89 84 28 37</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\M451Series\Source\system_M451Series.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 124</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 169</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 117</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICCARM</name>
+          <file> 170 168 39 31 19 66 52 91 75 21 131 63 82 29 159 139 135 156 145 81 128 121 146 144 171 173 141 143 164 113 151 155 140 163 166 136 165 123 174 150</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\nuconsole\NuConsole_Retarget.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 69</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 47</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 62</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 19 21 16 31 4 23 66 75 78 52 91 39 6</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16 4 39 6</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\retarget.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 65</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 27</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 88</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 66 23 31 75 21 19 16 52 91 78</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16 170 168 39 131 63 82 29 159 139 135 156 145 81 128 121 146 144 171 173 141 143 164 113 151 155 140 163 166 136 165 123 174 150</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\clk.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 74</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 44</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 116</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICCARM</name>
+          <file> 170 168 39 31 19 66 52 91 75 21 131 63 82 29 159 139 135 156 145 81 128 121 146 144 171 173 141 143 164 113 151 155 140 163 166 136 165 123 174 150</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\uart.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 30</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 25</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 55</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 66 23 31 75 21 19 16 52 91 78</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16 170 168 39 131 63 82 29 159 139 135 156 145 81 128 121 146 144 171 173 141 143 164 113 151 155 140 163 166 136 165 123 174 150</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\StdDriver\src\retarget.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 65</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 27</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 88</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 54 91 147 31 20 23 52 64 172 37 19 16 66 75 21 120 59 50 79 84 131 63 78 22 68 34 58 72 89 28 39 29 82</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16 147 64 39 131 63 82 29 120 59 22 54 68 50 34 172 58 79 72 20 89 84 28 37</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\M451Series\Source\IAR\startup_M451Series.s</name>
+      <outputs>
+        <tool>
+          <name>AARM</name>
+          <file> 119</file>
+        </tool>
+      </outputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\spi.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 49</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 71</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 36</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICCARM</name>
+          <file> 170 168 39 31 19 66 52 91 75 21 131 63 82 29 159 139 135 156 145 81 128 121 146 144 171 173 141 143 164 113 151 155 140 163 166 136 165 123 174 150</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\StdDriver\src\uart.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 30</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 25</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 55</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 66 23 31 75 21 19 16 52 91 78</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 78 31 19 66 52 91 75 21 23 16</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\NUC029xAN\Source\IAR\startup_NUC029xAN.s</name>
+      <outputs>
+        <tool>
+          <name>AARM</name>
+          <file> 46</file>
+        </tool>
+      </outputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\spi.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 49</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 71</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 36</file>
+        </tool>
+      </outputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\clk.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 74</file>
+        </tool>
+        <tool>
+          <name>ICCARM</name>
+          <file> 44</file>
+        </tool>
+        <tool>
+          <name>__cstat</name>
+          <file> 116</file>
+        </tool>
+      </outputs>
+    </file>
+    <forcedrebuild>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\uart.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\NUC029xAN\Source\system_NUC029xAN.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>$PROJ_DIR$\..\..\..\..\Library\Device\Nuvoton\M451Series\Source\system_M451Series.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\retarget.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\clk.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\uart.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriverM451\src\spi.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>C:\Nuvoton\BSP Library\NUC029xAN_Series_BSP_CMSIS_V3.00.005\Library\StdDriver\src\uart.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\spi.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>$PROJ_DIR$\..\..\..\..\Library\StdDriver\src\clk.c</name>
+      <tool>ICCARM</tool>
+    </forcedrebuild>
+  </configuration>
+</project>
+
+
