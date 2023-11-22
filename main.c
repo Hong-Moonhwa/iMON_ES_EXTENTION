@@ -94,7 +94,7 @@ volatile uint8_t g_u8SlvDataLen;
 /* Global variables I2C Master                                                                                      */
 /*---------------------------------------------------------------------------------------------------------*/
 static volatile uint8_t g_u8MstDeviceAddr;
-static volatile uint8_t g_au8MstTxData[4];
+static volatile uint8_t g_au8MstTxData[3];
 static volatile uint8_t g_u8MstRxData;
 static volatile uint8_t g_u8MstDataLen;
 static volatile uint8_t g_u8MstEndFlag = 0;
@@ -232,6 +232,8 @@ void I2C1_IRQHandler(void)
 /*---------------------------------------------------------------------------------------------------------*/
 void I2C_MasterRx(uint32_t u32Status)
 {
+
+	printf("\nI2C  I2C_MasterRx Status 0x%x\n", u32Status);
     uint32_t u32TimeOutCnt;
 
     if(u32Status == 0x08)                       /* START has been transmitted and prepare SLA+W */
@@ -251,9 +253,13 @@ void I2C_MasterRx(uint32_t u32Status)
     }
     else if(u32Status == 0x28)                  /* DATA has been transmitted and ACK has been received */
     {
+       // if(g_u8MstDataLen != 2)
         if(g_u8MstDataLen != 2)
-        {
-            I2C_SET_DATA(I2C1, g_au8MstTxData[g_u8MstDataLen++]);
+        {g_u8MstDataLen++;
+		//g_u8MstDataLen++;
+//            I2C_SET_DATA(I2C1, g_au8MstTxData[g_u8MstDataLen++]);
+            I2C_SET_DATA(I2C1, 0x00);
+
             I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
         }
         else
@@ -275,9 +281,7 @@ void I2C_MasterRx(uint32_t u32Status)
         g_u8MstRxData = (unsigned char) I2C_GET_DATA(I2C1);
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
        	printf("I2C Byte Read Data 0x%x\n", g_u8MstRxData);
-        g_u8MstRxData = (unsigned char) I2C_GET_DATA(I2C1);
-        I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
-       	printf("I2C Byte Read Data 0x%x\n", g_u8MstRxData);
+
 		 g_u8MstEndFlag = 1;
     }
     else
@@ -323,6 +327,7 @@ void I2C_MasterRx(uint32_t u32Status)
 void I2C_MasterTx(uint32_t u32Status)
 {
     uint32_t u32TimeOutCnt;
+	printf("\nI2C  I2C_MasterTx Status 0x%x\n", u32Status);
 
     if(u32Status == 0x08)                       /* START has been transmitted */
     {
@@ -341,26 +346,11 @@ void I2C_MasterTx(uint32_t u32Status)
     }
     else if(u32Status == 0x28)                  /* DATA has been transmitted and ACK has been received */
     {
-        //if(g_u8MstDataLen != 3)
-        if(g_u8MstDataLen < 3)
+        if(g_u8MstDataLen != 3)
         {
-			
-            I2C_SET_DATA(I2C1, 0x01);
+  
+            I2C_SET_DATA(I2C1, g_au8MstTxData[g_u8MstDataLen++]);
             I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
-
-
-			I2C_SET_DATA(I2C1,0x84);
-						I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
-
-			I2C_SET_DATA(I2C1, 0x83);
-						I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
-
-			Delay(1);
-			I2C_SET_DATA(I2C1, 0x00);
-						I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
-
-			g_u8MstDataLen=3;
-			
         }
 	    else
         {
@@ -441,9 +431,9 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
           //  g_au8MstTxData[2] = (uint8_t)(g_au8MstTxData[1] + 3);
           	data |= ADS1115_CONFIG_REGISTER_MUX_SINGLE_0;
 			g_au8MstTxData[0] = 0x01;
-			g_au8MstTxData[1] = 0x84;//(data & 0xFF00) >> 8; /* Reset 0x06 */
+			g_au8MstTxData[1] = 0x85;//(data & 0xFF00) >> 8; /* Reset 0x06 */
 			g_au8MstTxData[2] = 0x83;//data & 0x00FF;
-		//	g_au8MstTxData[3] = 0x00;
+	
             g_u8MstDataLen = 0;
             g_u8MstEndFlag = 0;
 			Delay(100);
@@ -532,62 +522,85 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
 void I2C_readBytes( uint8_t regAddr, uint8_t length, uint8_t *data) 
 {
 	uint8_t i, tmp;//,State;
-	I2C_START( I2C1 );                         //Start
-	I2C_WAIT_READY( I2C1 );
+	//I2C_START( I2C1 );                         //Start
+	//I2C_WAIT_READY( I2C1 );
+	I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STA);
 
-	I2C_SET_DATA( I2C1, ADS1115_ADDRESS );         //send slave address+W
+	I2C_SET_DATA( I2C1, (ADS1115_ADDRESS <<1));         //send slave address+W
 	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
-	I2C_WAIT_READY( I2C1 );
+//	I2C_WAIT_READY( I2C1 );
 
 	I2C_SET_DATA( I2C1, regAddr );        //send index
 	I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI );
-	I2C_WAIT_READY( I2C1 );
+//	I2C_WAIT_READY( I2C1 );
+
 
 	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_STA_SI );	//Start
-	I2C_WAIT_READY( I2C1 );
+//	I2C_WAIT_READY( I2C1 );
 
-	I2C_SET_DATA( I2C1, ( ADS1115_ADDRESS + 1 ) );    //send slave address+R
+	I2C_SET_DATA( I2C1, ( ADS1115_ADDRESS + 1 ) | 0x01);    //send slave address+R
 	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
-	I2C_WAIT_READY( I2C1 );							
 
+	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
+	
+	data[0] = (unsigned char) I2C_GET_DATA(I2C1);
+	I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+	
+	data[1] = (unsigned char) I2C_GET_DATA(I2C1);
+	I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+		
+
+	
+	//I2C_WAIT_READY( I2C1 );							
+#if 0
 	for ( i = 0; i < length; i++ ) {
 		if(i == ( length - 1 ) ){    //READ data until lsat data set
 			I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );  //NACK
 		}
 		else{
-			I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI_AA );	//ACK
+			//I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI_AA );	//ACK
 		}
-		I2C_WAIT_READY( I2C1 );							
+		//I2C_WAIT_READY( I2C1 );							
 		tmp = I2C_GET_DATA( I2C1 );           //read data   
 		data[ i ] = tmp;
 	}
-	I2C_STOP( I2C1 );										 //Stop
+#endif
+	//I2C_STOP( I2C1 );										 //Stop
 }
 
 void I2C_writeBytes( uint8_t regAddr, uint8_t length, uint8_t *data) 
 {
 	uint8_t i;
 	uint8_t tmp;
+	I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STA);
 
-	I2C_START( I2C1 );                    //Start
-	I2C_WAIT_READY( I2C1 );
-	I2C_SET_DATA( I2C1, ADS1115_ADDRESS );        //send slave address
+//	I2C_START( I2C1 );                    //Start
+//	I2C_WAIT_READY( I2C1 );
+	I2C_SET_DATA( I2C1, ADS1115_ADDRESS  << 1);        //send slave address
 	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
-	I2C_WAIT_READY( I2C1 );
+//	I2C_WAIT_READY( I2C1 );
 
 	I2C_SET_DATA( I2C1, regAddr );        //send index
 	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
-	I2C_WAIT_READY( I2C1 );	
-
+//	I2C_WAIT_READY( I2C1 );	
+#if 0
 	for ( i = 0; i < length; i ++) {
 		tmp = data[ i ];
 		I2C_SET_DATA( I2C1, tmp );            //send Data
 		I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
-		I2C_WAIT_READY( I2C1 );
+	//	I2C_WAIT_READY( I2C1 );
 
 	}
+#endif
+	I2C_SET_DATA(I2C1, data[0]);
+	I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
 
-	I2C_STOP( I2C1 );					 //Stop
+	I2C_SET_DATA(I2C1, data[1]);
+	I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+
+	I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+
+	//I2C_STOP( I2C1 );					 //Stop
 }
 
 /************************************************************************
@@ -798,8 +811,6 @@ int main(void)
 	Timer_Init();
 
 
-    RS485_SendDataByte(g_fault_finderData, 8);
-
 	
 	PA12 = 0; /* EN */
 
@@ -827,7 +838,7 @@ int main(void)
 
 #if 1
 
- //   I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
+  //  I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
 //	I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
 	//I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
 
@@ -837,32 +848,82 @@ int main(void)
 	//	I2C1_Read_Write_SLAVE(0x4b);
 
 
+
+#if 1
+	uint16_t setup_data = 0;
+
+	 I2C_EnableTimeout(I2C1, 0);
+
+
 	// Select configuration register(0x01)
 	// AINP = AIN0 and AINN = AIN1, +/- 2.048V
 	// Continuous conversion mode, 128 SPS(0x84, 0x83) 000 : ANIP = AIN0 & AINN = AIN1 
-	uint8_t config_data[2] = {0x84, 0x83}, read_data[2]={0,};
+	uint8_t config_data[2] = {0,}, read_data[2]={0,};
+	
+	setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE	| /* 0x8000 */
+		ADS1115_CONFIG_REGISTER_MUX_DIFF_0_1 |			/* 0x0000 */
+		ADS1115_CONFIG_REGISTER_PGA_2_048	 |			/* 0x0400 (default) */
+		ADS1115_CONFIG_REGISTER_MODE_SINGLE  |			/* 0x0100 (default) */ 
+		ADS1115_CONFIG_REGISTER_DR_128_SPS	 |			/* 0x0080 (default) */	
+		ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR   |/* 0x0000 (default) */		
+		ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		|/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	 /* 0x0003 (default) */ 
+
+	config_data[0] = (setup_data & 0xFF00) >> 8;
+	config_data[1] = setup_data & 0x00FF;;
+	printf("\nconfig_data 0x%x 0x%x", config_data[0],config_data[1]);
 
 	I2C_writeBytes(0x01, 2,config_data);
-	Delay(50000);
-	I2C_readBytes(0x00, 2, read_data );
 
+
+	//Delay(50000);
+	I2C_readBytes(0x03, 2, read_data );
+	
+
+	printf("\nDigital Value 1 of Analog Input :[0x%d] [0x%x]  \n", \
+																read_data[0], \
+																read_data[1]);
+	I2C_readBytes(0x02, 2, read_data );
+	
+
+	printf("\nDigital Value 1 of Analog Input :[0x%d] [0x%x]  \n", \
+																read_data[0], \
+																read_data[1]);
+
+	I2C_readBytes(0x00, 2, read_data );
 	int raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
 	if (raw_adc > 32767)
 	{
 		raw_adc -= 65535;
 	}
-	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+	printf("\nDigital Value 1 of Analog Input :[0x%d] [0x%x] [%d] \n", \
 																read_data[0], \
 																read_data[1], \
 																	raw_adc);	
+	setup_data = 0;
 
 
 	// Select configuration register(0x01)
 
 	// AINP = AIN0 and AINN = AIN3, +/- 2.048V 		   
 	// Continuous conversion mode, 128 SPS(0x94, 0x83) 001 : ANIP = AIN0 & AINN = AIN3 
-	config_data[0] = 0x94;
-	config_data[1] = 0x83;
+
+	setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE	| /* 0x8000 */
+		ADS1115_CONFIG_REGISTER_MUX_DIFF_0_3 |			/* 0x1000 */
+		ADS1115_CONFIG_REGISTER_PGA_2_048	 |			/* 0x0400 (default) */
+		ADS1115_CONFIG_REGISTER_MODE_SINGLE  |			/* 0x0100 (default) */ 
+		ADS1115_CONFIG_REGISTER_DR_128_SPS	 |			/* 0x0080 (default) */	
+		ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR   |/* 0x0000 (default) */		
+		ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		|/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	 /* 0x0003 (default) */ 
+	
+
+	config_data[0] = (setup_data & 0xFF00) >> 8;
+	config_data[1] = setup_data & 0x00FF;;
+	printf("\nconfig_data 0x%x 0x%x", config_data[0],config_data[1]);
+
 
 	I2C_writeBytes(0x01, 2,config_data);
 	Delay(50000);
@@ -873,16 +934,30 @@ int main(void)
 	{
 		raw_adc -= 65535;
 	}
-	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+	printf("\nDigital Value 2 of Analog Input :[0x%d] [0x%x] [%d] \n", \
 																read_data[0], \
 																read_data[1], \
 																	raw_adc);	
 
+	setup_data = 0;
 
 	// AINP = AIN1 and AINN = AIN3, +/- 2.048V         
 	// Continuous conversion mode, 128 SPS(0xA4, 0x83) 010 : ANIP = AIN1 & AINN = AIN3 
-	config_data[0] = 0xa4;
-	config_data[1] = 0x83;
+
+	setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE	| /* 0x8000 */
+		ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3 |			/* 0x2000 */
+		ADS1115_CONFIG_REGISTER_PGA_2_048	 |			/* 0x0400 (default) */
+		ADS1115_CONFIG_REGISTER_MODE_SINGLE  |			/* 0x0100 (default) */ 
+		ADS1115_CONFIG_REGISTER_DR_128_SPS	 |			/* 0x0080 (default) */	
+		ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR   |/* 0x0000 (default) */		
+		ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		|/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	 /* 0x0003 (default) */ 
+	
+
+	config_data[0] = (setup_data & 0xFF00) >> 8;
+	config_data[1] = setup_data & 0x00FF;;
+
 
 	I2C_writeBytes(0x01, 2,config_data);
 	Delay(50000);
@@ -893,16 +968,30 @@ int main(void)
 	{
 		raw_adc -= 65535;
 	}
-	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+	printf("\nDigital Value 3 of Analog Input :[0x%d] [0x%x] [%d] \n", \
 																read_data[0], \
 																read_data[1], \
 																	raw_adc);	
 
+	setup_data = 0;
 
 	// AINP = AIN2 and AINN = AIN3, +/- 2.048V
 	// Continuous conversion mode, 128 SPS(0xB4, 0x83) 011 : ANIP = AIN2 & AINN = AIN3 
-	config_data[0] = 0xb4;
-	config_data[1] = 0x83;
+
+	setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE	| /* 0x8000 */
+		ADS1115_CONFIG_REGISTER_MUX_DIFF_2_3 |			/* 0x3000 */
+		ADS1115_CONFIG_REGISTER_PGA_2_048	 |			/* 0x0400 (default) */
+		ADS1115_CONFIG_REGISTER_MODE_SINGLE  |			/* 0x0100 (default) */ 
+		ADS1115_CONFIG_REGISTER_DR_128_SPS	 |			/* 0x0080 (default) */	
+		ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR   |/* 0x0000 (default) */		
+		ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		|/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	 /* 0x0003 (default) */ 
+	
+
+	config_data[0] = (setup_data & 0xFF00) >> 8;
+	config_data[1] = setup_data & 0x00FF;;
+
 
 	I2C_writeBytes(0x01, 2,config_data);
 	Delay(50000);
@@ -913,16 +1002,30 @@ int main(void)
 	{
 		raw_adc -= 65535;
 	}
-	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+	printf("\nDigital Value 4 of Analog Input :[0x%d] [0x%x] [%d] \n", \
 																read_data[0], \
 																read_data[1], \
 																	raw_adc);	
+	setup_data = 0;
 
 
 	// AINP = AIN0 and AINN = GND, +/- 2.048V
 	// Continuous conversion mode, 128 SPS(0xc4, 0x83) 100 : ANIP = AIN0 & AINN = GND
-	config_data[0] = 0xc4;
-	config_data[1] = 0x83;
+
+	setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE	| /* 0x8000 */
+		ADS1115_CONFIG_REGISTER_MUX_SINGLE_0 |			/* 0x4000 */
+		ADS1115_CONFIG_REGISTER_PGA_2_048	 |			/* 0x0400 (default) */
+		ADS1115_CONFIG_REGISTER_MODE_SINGLE  |			/* 0x0100 (default) */ 
+		ADS1115_CONFIG_REGISTER_DR_128_SPS	 |			/* 0x0080 (default) */	
+		ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR   |/* 0x0000 (default) */		
+		ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		|/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	 /* 0x0003 (default) */ 
+	
+
+	config_data[0] = (setup_data & 0xFF00) >> 8;
+	config_data[1] = setup_data & 0x00FF;;
+
 
 	I2C_writeBytes(0x01, 2,config_data);
 	Delay(50000);
@@ -933,15 +1036,29 @@ int main(void)
 	{
 		raw_adc -= 65535;
 	}
-	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+	printf("\nDigital Value 5 of Analog Input :[0x%d] [0x%x] [%d] \n", \
 																read_data[0], \
 																read_data[1], \
 																	raw_adc);	
+	setup_data = 0;
 
 	// AINP = AIN1 and AINN = GND, +/- 2.048V
 	// Continuous conversion mode, 128 SPS(0xd4, 0x83) 101 : ANIP = AIN1 & AINN = GND 
-	config_data[0] = 0xd4;
-	config_data[1] = 0x83;
+
+	setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE	| /* 0x8000 */
+		ADS1115_CONFIG_REGISTER_MUX_SINGLE_1 |			/* 0x5000 */
+		ADS1115_CONFIG_REGISTER_PGA_2_048	 |			/* 0x0400 (default) */
+		ADS1115_CONFIG_REGISTER_MODE_SINGLE  |			/* 0x0100 (default) */ 
+		ADS1115_CONFIG_REGISTER_DR_128_SPS	 |			/* 0x0080 (default) */	
+		ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR   |/* 0x0000 (default) */		
+		ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		|/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	 /* 0x0003 (default) */ 
+	
+
+	config_data[0] = (setup_data & 0xFF00) >> 8;
+	config_data[1] = setup_data & 0x00FF;;
+
 
 	I2C_writeBytes(0x01, 2,config_data);
 	Delay(50000);
@@ -952,16 +1069,30 @@ int main(void)
 	{
 		raw_adc -= 65535;
 	}
-	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+	printf("\nDigital Value 6 of Analog Input :[0x%d] [0x%x] [%d] \n", \
 																read_data[0], \
 																read_data[1], \
 																	raw_adc);	
 
+		setup_data = 0;
 
 	// AINP = AIN2 and AINN = GND, +/- 2.048V
 	// Continuous conversion mode, 128 SPS(0xe4, 0x83) 110 : ANIP = AIN2 & AINN = GND
-	config_data[0] = 0xe4;
-	config_data[1] = 0x83;
+
+	setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE	| /* 0x8000 */
+		ADS1115_CONFIG_REGISTER_MUX_SINGLE_2 |			/* 0x6000 */
+		ADS1115_CONFIG_REGISTER_PGA_2_048	 |			/* 0x0400 (default) */
+		ADS1115_CONFIG_REGISTER_MODE_SINGLE  |			/* 0x0100 (default) */ 
+		ADS1115_CONFIG_REGISTER_DR_128_SPS	 |			/* 0x0080 (default) */	
+		ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR   |/* 0x0000 (default) */		
+		ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		|/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	 /* 0x0003 (default) */ 
+	
+
+	config_data[0] = (setup_data & 0xFF00) >> 8;
+	config_data[1] = setup_data & 0x00FF;;
+
 
 	I2C_writeBytes(0x01, 2,config_data);
 	Delay(50000);
@@ -972,16 +1103,30 @@ int main(void)
 	{
 		raw_adc -= 65535;
 	}
-	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+	printf("\nDigital Value 7 of Analog Input :[0x%d] [0x%x] [%d] \n", \
 																read_data[0], \
 																read_data[1], \
 																	raw_adc);	
 
+	setup_data = 0;
 
 	// AINP = AIN3 and AINN = GND, +/- 2.048V
 	// Continuous conversion mode, 128 SPS(0xf4, 0x83) 111 : ANIP = AIN3 & AINN = GND 
-	config_data[0] = 0xf4;
-	config_data[1] = 0x83;
+
+	setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE	| /* 0x8000 */
+		ADS1115_CONFIG_REGISTER_MUX_SINGLE_3 |			/* 0x7000 */
+		ADS1115_CONFIG_REGISTER_PGA_2_048	 |			/* 0x0400 (default) */
+		ADS1115_CONFIG_REGISTER_MODE_SINGLE  |			/* 0x0100 (default) */ 
+		ADS1115_CONFIG_REGISTER_DR_128_SPS	 |			/* 0x0080 (default) */	
+		ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR   |/* 0x0000 (default) */		
+		ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		|/* 0x0000 (default) */ 
+		ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	 /* 0x0003 (default) */ 
+	
+
+	config_data[0] = (setup_data & 0xFF00) >> 8;
+	config_data[1] = setup_data & 0x00FF;;
+
 
 	I2C_writeBytes(0x01, 2,config_data);
 	Delay(50000);
@@ -997,7 +1142,7 @@ int main(void)
 																read_data[1], \
 																	raw_adc);	
 
-	
+		setup_data = 0;
 	 
 	
 	
@@ -1027,9 +1172,11 @@ int main(void)
 		
 		// AINP = AIN3 and AINN = GND, +/- 2.048V
 		// Continuous conversion mode, 128 SPS(0xf4, 0x83) 111 : ANIP = AIN3 & AINN = GND 
-	
+#endif	
 #endif
 
+
+    RS485_SendDataByte(g_fault_finderData, 8);
 
 
     while(1)
@@ -1417,7 +1564,7 @@ void I2C_Init(void)
     NVIC_EnableIRQ(I2C0_IRQn);
     /* Enable I2C interrupt */
     I2C_EnableInt(I2C1);
-  //  NVIC_EnableIRQ(I2C1_IRQn);
+ //   NVIC_EnableIRQ(I2C1_IRQn);
 
 
 
