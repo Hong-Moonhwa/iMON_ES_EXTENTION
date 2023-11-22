@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include "M451Series.h"
 #include "arm_math.h"
+#include "ADS1115.h"
 
 
 #define PLLCTL_SETTING      CLK_PLLCTL_72MHz_HXT
@@ -20,26 +21,7 @@
 
 
 
-/* Function prototype declaration */
-void SYS_Init(void);
-void SPI_Init(void);
-void UART_Init(void);
-void I2C_Init(void);
-void Timer_Init(void);
-void RS485_SendAddressByte(uint8_t u8data);
-void RS485_SendDataByte(uint8_t *pu8TxBuf, uint32_t u32WriteBytes);
-void RS485_9bitModeMaster(void);
-void SPI2_IRQHandler(void);
-void UART0_IRQHandler(void);
-void I2C_SlaveTRx(uint32_t u32Status);
 
-
-void TMR1_IRQHandler(void);
-void I2C0_IRQHandler(void);
-void I2C1_IRQHandler(void);
-void Delay(uint32_t delayCnt);
-
-int get_PinValue();
 
 /*---------------------------------------------------------------------------------------------------------*/
 /* Global variables                                                                                       */
@@ -111,16 +93,13 @@ volatile uint8_t g_u8SlvDataLen;
 /*---------------------------------------------------------------------------------------------------------*/
 /* Global variables I2C Master                                                                                      */
 /*---------------------------------------------------------------------------------------------------------*/
-
-
-
-
-
 static volatile uint8_t g_u8MstDeviceAddr;
-static volatile uint8_t g_au8MstTxData[3];
+static volatile uint8_t g_au8MstTxData[4];
 static volatile uint8_t g_u8MstRxData;
 static volatile uint8_t g_u8MstDataLen;
 static volatile uint8_t g_u8MstEndFlag = 0;
+
+
 static volatile uint8_t g_u8MstTxAbortFlag = 0;
 static volatile uint8_t g_u8MstRxAbortFlag = 0;
 static volatile uint8_t g_u8MstReStartFlag = 0;
@@ -135,7 +114,7 @@ void I2C0_IRQHandler(void)
     uint32_t u32Status;
 	
     u32Status = I2C_GET_STATUS(I2C0);
-	printf("[Slave] I2C0_IRQHandler Proccesed\n");
+	printf("\n[Slave] I2C0_IRQHandler Proccesed\n");
 
     if(I2C_GET_TIMEOUT_FLAG(I2C0))
     {
@@ -149,34 +128,17 @@ void I2C0_IRQHandler(void)
             s_I2C0HandlerFn(u32Status);
     }
 }
-/*---------------------------------------------------------------------------------------------------------*/
-/*  I2C1 IRQ Handler                                                                                       */
-/*---------------------------------------------------------------------------------------------------------*/
-void I2C1_IRQHandler(void)
-{
-    uint32_t u32Status;
-	//printf("[Master] I2C1_IRQHandler Proccesed\n");
 
-    u32Status = I2C_GET_STATUS(I2C1);
-
-    if(I2C_GET_TIMEOUT_FLAG(I2C1))
-    {
-        /* Clear I2C1 Timeout Flag */
-        I2C_ClearTimeoutFlag(I2C1);
-        g_u8MstTimeoutFlag = 1;
-    }
-    else
-    {
-        if(s_I2C1HandlerFn != NULL)
-            s_I2C1HandlerFn(u32Status);
-    }
-}
 
 /*---------------------------------------------------------------------------------------------------------*/
 /*  I2C TRx Callback Function                                                                              */
 /*---------------------------------------------------------------------------------------------------------*/
 void I2C_SlaveTRx(uint32_t u32Status)
 {
+
+	printf("\niMON I2C0 GET RAW Data 0x%x\n",(unsigned char) I2C_GET_DATA(I2C0));
+
+
     if(u32Status == 0x60)                       /* Own SLA+W has been receive; ACK has been return */
     {
         g_u8SlvDataLen = 0;
@@ -186,6 +148,7 @@ void I2C_SlaveTRx(uint32_t u32Status)
                                                    Data has been received; ACK has been returned*/
     {
         g_au8SlvRxData[g_u8SlvDataLen] = (unsigned char) I2C_GET_DATA(I2C0);
+		printf("iMON I2C0 GET Data 0x%x",g_au8SlvRxData[g_u8SlvDataLen]);
         g_u8SlvDataLen++;
 
         if(g_u8SlvDataLen == 2)
@@ -242,6 +205,27 @@ void I2C_SlaveTRx(uint32_t u32Status)
         g_u8SlvTRxAbortFlag = 1;
     }
 }
+/*---------------------------------------------------------------------------------------------------------*/
+/*  I2C1 IRQ Handler   Master                                                                                    */
+/*---------------------------------------------------------------------------------------------------------*/
+void I2C1_IRQHandler(void)
+{
+    uint32_t u32Status;
+
+    u32Status = I2C_GET_STATUS(I2C1);
+
+    if(I2C_GET_TIMEOUT_FLAG(I2C1))
+    {
+        /* Clear I2C1 Timeout Flag */
+        I2C_ClearTimeoutFlag(I2C1);
+        g_u8MstTimeoutFlag = 1;
+    }
+    else
+    {
+        if(s_I2C1HandlerFn != NULL)
+            s_I2C1HandlerFn(u32Status);
+    }
+}
 
 /*---------------------------------------------------------------------------------------------------------*/
 /*  I2C Rx Callback Function                                                                               */
@@ -290,7 +274,11 @@ void I2C_MasterRx(uint32_t u32Status)
     {
         g_u8MstRxData = (unsigned char) I2C_GET_DATA(I2C1);
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
-        g_u8MstEndFlag = 1;
+       	printf("I2C Byte Read Data 0x%x\n", g_u8MstRxData);
+        g_u8MstRxData = (unsigned char) I2C_GET_DATA(I2C1);
+        I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+       	printf("I2C Byte Read Data 0x%x\n", g_u8MstRxData);
+		 g_u8MstEndFlag = 1;
     }
     else
     {
@@ -324,7 +312,7 @@ void I2C_MasterRx(uint32_t u32Status)
         g_u8MstRxAbortFlag = 1;
         getchar();
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
-        u32TimeOutCnt = 100;//I2C_TIMEOUT;
+        u32TimeOutCnt = 10;//I2C_TIMEOUT;
         while(I2C1->CTL & I2C_CTL_SI_Msk)
             if(--u32TimeOutCnt == 0) break;
     }
@@ -353,12 +341,28 @@ void I2C_MasterTx(uint32_t u32Status)
     }
     else if(u32Status == 0x28)                  /* DATA has been transmitted and ACK has been received */
     {
-        if(g_u8MstDataLen != 3)
+        //if(g_u8MstDataLen != 3)
+        if(g_u8MstDataLen < 3)
         {
-            I2C_SET_DATA(I2C1, g_au8MstTxData[g_u8MstDataLen++]);
+			
+            I2C_SET_DATA(I2C1, 0x01);
             I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+
+
+			I2C_SET_DATA(I2C1,0x84);
+						I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+
+			I2C_SET_DATA(I2C1, 0x83);
+						I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+
+			Delay(1);
+			I2C_SET_DATA(I2C1, 0x00);
+						I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+
+			g_u8MstDataLen=3;
+			
         }
-        else
+	    else
         {
             I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
             g_u8MstEndFlag = 1;
@@ -403,7 +407,7 @@ void I2C_MasterTx(uint32_t u32Status)
         g_u8MstTxAbortFlag = 1;
         getchar();
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
-        u32TimeOutCnt = 100;//I2C_TIMEOUT;
+        u32TimeOutCnt = 10;//I2C_TIMEOUT;
         while(I2C1->CTL & I2C_CTL_SI_Msk)
             if(--u32TimeOutCnt == 0) break;
     }
@@ -411,7 +415,17 @@ void I2C_MasterTx(uint32_t u32Status)
 
 int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
 {
-	uint32_t i;
+    uint32_t i;
+	uint16_t data = 			ADS1115_CONFIG_REGISTER_OS_SINGLE				|
+				//ADS1115_CONFIG_REGISTER_MUX_SINGLE_X				|
+			  	ADS1115_CONFIG_REGISTER_PGA_6_144				|
+		  		ADS1115_CONFIG_REGISTER_MODE_SINGLE  				|
+		  		ADS1115_CONFIG_REGISTER_DR_128_SPS				|
+			  	ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR	|
+				 ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW			|
+		  		ADS1115_CONFIG_REGISTER_COMP_LAT_NONE				|
+	  			ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;
+
     do
     {
         /* Enable I2C timeout */
@@ -422,13 +436,18 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
 
         for(i = 0; i < 0x100; i++)
         {
-            g_au8MstTxData[0] = (uint8_t)((i & 0xFF00) >> 8);
-            g_au8MstTxData[1] = (uint8_t)(i & 0x00FF);
-            g_au8MstTxData[2] = (uint8_t)(g_au8MstTxData[1] + 3);
-
+           // g_au8MstTxData[0] = (uint8_t)((i & 0xFF00) >> 8);
+         //   g_au8MstTxData[1] = (uint8_t)(i & 0x00FF);
+          //  g_au8MstTxData[2] = (uint8_t)(g_au8MstTxData[1] + 3);
+          	data |= ADS1115_CONFIG_REGISTER_MUX_SINGLE_0;
+			g_au8MstTxData[0] = 0x01;
+			g_au8MstTxData[1] = 0x84;//(data & 0xFF00) >> 8; /* Reset 0x06 */
+			g_au8MstTxData[2] = 0x83;//data & 0x00FF;
+		//	g_au8MstTxData[3] = 0x00;
             g_u8MstDataLen = 0;
             g_u8MstEndFlag = 0;
-
+			Delay(100);
+#if 1
             /* I2C function to write data to slave */
             s_I2C1HandlerFn = (I2C_FUNC)I2C_MasterTx;
 
@@ -460,7 +479,7 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
                 g_u8MstReStartFlag = 1;
                 break;
             }
-
+#endif
             /* I2C function to read data from slave */
             s_I2C1HandlerFn = (I2C_FUNC)I2C_MasterRx;
 
@@ -496,20 +515,80 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
             }
         }
     } while(g_u8MstReStartFlag); /*If unexpected abort happens, re-start the transmition*/
+#if 1
+//	printf("I2C Byte Read Data 0x%x\n", g_u8MstRxData);
 
+#else
     /* Compare data */
     if(g_u8MstRxData != g_au8MstTxData[2])
     {
         printf("I2C Byte Write/Read Failed, Data 0x%x\n", g_u8MstRxData);
         return -1;
     }
-
+#endif
     printf("Master Access Slave (0x%X) Test OK\n", slvaddr);
-
     return 0;
+}
+void I2C_readBytes( uint8_t regAddr, uint8_t length, uint8_t *data) 
+{
+	uint8_t i, tmp;//,State;
+	I2C_START( I2C1 );                         //Start
+	I2C_WAIT_READY( I2C1 );
 
+	I2C_SET_DATA( I2C1, ADS1115_ADDRESS );         //send slave address+W
+	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
+	I2C_WAIT_READY( I2C1 );
+
+	I2C_SET_DATA( I2C1, regAddr );        //send index
+	I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI );
+	I2C_WAIT_READY( I2C1 );
+
+	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_STA_SI );	//Start
+	I2C_WAIT_READY( I2C1 );
+
+	I2C_SET_DATA( I2C1, ( ADS1115_ADDRESS + 1 ) );    //send slave address+R
+	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
+	I2C_WAIT_READY( I2C1 );							
+
+	for ( i = 0; i < length; i++ ) {
+		if(i == ( length - 1 ) ){    //READ data until lsat data set
+			I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );  //NACK
+		}
+		else{
+			I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI_AA );	//ACK
+		}
+		I2C_WAIT_READY( I2C1 );							
+		tmp = I2C_GET_DATA( I2C1 );           //read data   
+		data[ i ] = tmp;
+	}
+	I2C_STOP( I2C1 );										 //Stop
 }
 
+void I2C_writeBytes( uint8_t regAddr, uint8_t length, uint8_t *data) 
+{
+	uint8_t i;
+	uint8_t tmp;
+
+	I2C_START( I2C1 );                    //Start
+	I2C_WAIT_READY( I2C1 );
+	I2C_SET_DATA( I2C1, ADS1115_ADDRESS );        //send slave address
+	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
+	I2C_WAIT_READY( I2C1 );
+
+	I2C_SET_DATA( I2C1, regAddr );        //send index
+	I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
+	I2C_WAIT_READY( I2C1 );	
+
+	for ( i = 0; i < length; i ++) {
+		tmp = data[ i ];
+		I2C_SET_DATA( I2C1, tmp );            //send Data
+		I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
+		I2C_WAIT_READY( I2C1 );
+
+	}
+
+	I2C_STOP( I2C1 );					 //Stop
+}
 
 /************************************************************************
  * DESCRIPTION:
@@ -722,50 +801,242 @@ int main(void)
     RS485_SendDataByte(g_fault_finderData, 8);
 
 	
+	PA12 = 0; /* EN */
 
 
-    printf("\n");
-    printf(" == No Mask Address ==\n");
-    I2C1_Read_Write_SLAVE(0x48);
-    //I2C1_Read_Write_SLAVE(0x49);
+	PA13 = 1; /* S0 */
+	PA14 = 0; /* S1 */
+	PA15 = 0; /* S2 */
 
-    printf("SLAVE Address test OK.\n");
-
-    /* Access Slave with address mask */
-    printf("\n");
-    printf(" == Mask Address ==\n");
-  //  I2C1_Read_Write_SLAVE(0x48 & ~0x01);
-  //  I2C1_Read_Write_SLAVE(0x49 & ~0x04);
-    printf("SLAVE Address Mask test OK.\n");
-
-	
 #if 1
-	/* I2C enter no address SLV mode */
-	  I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
-	
-	  for(i = 0; i < 0x100; i++)
-	  {
-		  g_au8SlvData[i] = 0;
-	  }
-	
-	  /* I2C function to Slave receive/transmit data */
-	  s_I2C0HandlerFn = I2C_SlaveTRx;
-	
-	  printf("\n");
-	  printf("I2C Slave Mode is Running.\n");
-	
-	  g_u8SlvTimeoutFlag = 0;
+
+    /* I2C enter no address SLV mode */
+    I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+
+//    for(i = 0; i < 0x100; i++)
+ //   {
+  //      g_au8SlvData[i] = 0;
+   // }
+
+    /* I2C function to Slave receive/transmit data */
+    s_I2C0HandlerFn = I2C_SlaveTRx;
+
+    printf("\n");
+    printf("I2C Slave Mode is Running.\n");
+#endif
+
+#if 1
+
+ //   I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
+//	I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
+	//I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
 
 
+	//	I2C1_Read_Write_SLAVE(0x49);
+	//	I2C1_Read_Write_SLAVE(0x4a);
+	//	I2C1_Read_Write_SLAVE(0x4b);
+
+
+	// Select configuration register(0x01)
+	// AINP = AIN0 and AINN = AIN1, +/- 2.048V
+	// Continuous conversion mode, 128 SPS(0x84, 0x83) 000 : ANIP = AIN0 & AINN = AIN1 
+	uint8_t config_data[2] = {0x84, 0x83}, read_data[2]={0,};
+
+	I2C_writeBytes(0x01, 2,config_data);
+	Delay(50000);
+	I2C_readBytes(0x00, 2, read_data );
+
+	int raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
+	if (raw_adc > 32767)
+	{
+		raw_adc -= 65535;
+	}
+	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+																read_data[0], \
+																read_data[1], \
+																	raw_adc);	
+
+
+	// Select configuration register(0x01)
+
+	// AINP = AIN0 and AINN = AIN3, +/- 2.048V 		   
+	// Continuous conversion mode, 128 SPS(0x94, 0x83) 001 : ANIP = AIN0 & AINN = AIN3 
+	config_data[0] = 0x94;
+	config_data[1] = 0x83;
+
+	I2C_writeBytes(0x01, 2,config_data);
+	Delay(50000);
+	I2C_readBytes(0x00, 2, read_data );
+
+	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
+	if (raw_adc > 32767)
+	{
+		raw_adc -= 65535;
+	}
+	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+																read_data[0], \
+																read_data[1], \
+																	raw_adc);	
+
+
+	// AINP = AIN1 and AINN = AIN3, +/- 2.048V         
+	// Continuous conversion mode, 128 SPS(0xA4, 0x83) 010 : ANIP = AIN1 & AINN = AIN3 
+	config_data[0] = 0xa4;
+	config_data[1] = 0x83;
+
+	I2C_writeBytes(0x01, 2,config_data);
+	Delay(50000);
+	I2C_readBytes(0x00, 2, read_data );
+
+	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
+	if (raw_adc > 32767)
+	{
+		raw_adc -= 65535;
+	}
+	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+																read_data[0], \
+																read_data[1], \
+																	raw_adc);	
+
+
+	// AINP = AIN2 and AINN = AIN3, +/- 2.048V
+	// Continuous conversion mode, 128 SPS(0xB4, 0x83) 011 : ANIP = AIN2 & AINN = AIN3 
+	config_data[0] = 0xb4;
+	config_data[1] = 0x83;
+
+	I2C_writeBytes(0x01, 2,config_data);
+	Delay(50000);
+	I2C_readBytes(0x00, 2, read_data );
+
+	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
+	if (raw_adc > 32767)
+	{
+		raw_adc -= 65535;
+	}
+	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+																read_data[0], \
+																read_data[1], \
+																	raw_adc);	
+
+
+	// AINP = AIN0 and AINN = GND, +/- 2.048V
+	// Continuous conversion mode, 128 SPS(0xc4, 0x83) 100 : ANIP = AIN0 & AINN = GND
+	config_data[0] = 0xc4;
+	config_data[1] = 0x83;
+
+	I2C_writeBytes(0x01, 2,config_data);
+	Delay(50000);
+	I2C_readBytes(0x00, 2, read_data );
+
+	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
+	if (raw_adc > 32767)
+	{
+		raw_adc -= 65535;
+	}
+	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+																read_data[0], \
+																read_data[1], \
+																	raw_adc);	
+
+	// AINP = AIN1 and AINN = GND, +/- 2.048V
+	// Continuous conversion mode, 128 SPS(0xd4, 0x83) 101 : ANIP = AIN1 & AINN = GND 
+	config_data[0] = 0xd4;
+	config_data[1] = 0x83;
+
+	I2C_writeBytes(0x01, 2,config_data);
+	Delay(50000);
+	I2C_readBytes(0x00, 2, read_data );
+
+	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
+	if (raw_adc > 32767)
+	{
+		raw_adc -= 65535;
+	}
+	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+																read_data[0], \
+																read_data[1], \
+																	raw_adc);	
+
+
+	// AINP = AIN2 and AINN = GND, +/- 2.048V
+	// Continuous conversion mode, 128 SPS(0xe4, 0x83) 110 : ANIP = AIN2 & AINN = GND
+	config_data[0] = 0xe4;
+	config_data[1] = 0x83;
+
+	I2C_writeBytes(0x01, 2,config_data);
+	Delay(50000);
+	I2C_readBytes(0x00, 2, read_data );
+
+	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
+	if (raw_adc > 32767)
+	{
+		raw_adc -= 65535;
+	}
+	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+																read_data[0], \
+																read_data[1], \
+																	raw_adc);	
+
+
+	// AINP = AIN3 and AINN = GND, +/- 2.048V
+	// Continuous conversion mode, 128 SPS(0xf4, 0x83) 111 : ANIP = AIN3 & AINN = GND 
+	config_data[0] = 0xf4;
+	config_data[1] = 0x83;
+
+	I2C_writeBytes(0x01, 2,config_data);
+	Delay(50000);
+	I2C_readBytes(0x00, 2, read_data );
+
+	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
+	if (raw_adc > 32767)
+	{
+		raw_adc -= 65535;
+	}
+	printf("\nDigital Value 8 of Analog Input :[0x%d] [0x%x] [%d] \n", \
+																read_data[0], \
+																read_data[1], \
+																	raw_adc);	
+
+	
+	 
+	
+	
+	// Select configuration register(0x01)
+		// AINP = AIN0 and AINN = AIN1, +/- 2.048V
+		// Continuous conversion mode, 128 SPS(0x84, 0x83) 000 : ANIP = AIN0 & AINN = AIN1 
+	
+		// Select configuration register(0x01)
+	
+		// AINP = AIN0 and AINN = AIN3, +/- 2.048V		   
+		// Continuous conversion mode, 128 SPS(0x94, 0x83) 001 : ANIP = AIN0 & AINN = AIN3 
+	
+		// AINP = AIN1 and AINN = AIN3, +/- 2.048V		   
+		// Continuous conversion mode, 128 SPS(0xA4, 0x83) 010 : ANIP = AIN1 & AINN = AIN3 
+	
+		// AINP = AIN2 and AINN = AIN3, +/- 2.048V
+		// Continuous conversion mode, 128 SPS(0xB4, 0x83) 011 : ANIP = AIN2 & AINN = AIN3 
+		
+		// AINP = AIN0 and AINN = GND, +/- 2.048V
+		// Continuous conversion mode, 128 SPS(0xc4, 0x83) 100 : ANIP = AIN0 & AINN = GND
+									
+		// AINP = AIN1 and AINN = GND, +/- 2.048V
+		// Continuous conversion mode, 128 SPS(0xd4, 0x83) 101 : ANIP = AIN1 & AINN = GND 
+		
+		// AINP = AIN2 and AINN = GND, +/- 2.048V
+		// Continuous conversion mode, 128 SPS(0xe4, 0x83) 110 : ANIP = AIN2 & AINN = GND
+		
+		// AINP = AIN3 and AINN = GND, +/- 2.048V
+		// Continuous conversion mode, 128 SPS(0xf4, 0x83) 111 : ANIP = AIN3 & AINN = GND 
+	
 #endif
 
 
 
     while(1)
     {
-    		if(g_485_flags && g_u32_485RxDataCount == 16)
+    	if(g_485_flags && g_u32_485RxDataCount == 16)
 		{
-			printf("485 : \n ");
+			printf("\n 485 : \n ");
 			for(i=0;i<g_u32_485RxDataCount;i++)
 			{
 				 printf("[%d:0x%02x] ", i,g_fault_RecvData[i]);
@@ -775,12 +1046,12 @@ int main(void)
 			g_485_flags = 0 ;
 			g_u32_485RxDataCount=0;
 		}
-#if 1
+#if 0
         /* Handle Slave timeout condition */
         if(g_u8SlvTimeoutFlag)
         {
             printf(" SlaveTRx time out, any to reset IP\n");
-            //getchar();
+            getchar();
             SYS->IPRST1 |= SYS_IPRST1_I2C0RST_Msk;
             SYS->IPRST1 = 0;
             I2C_Init();
@@ -791,7 +1062,7 @@ int main(void)
         if(g_u8SlvTRxAbortFlag)
         {
             g_u8SlvTRxAbortFlag = 0;
-            u32TimeOutCnt = 100;//I2C_TIMEOUT;
+            u32TimeOutCnt = 10;//I2C_TIMEOUT;
             while(I2C0->CTL & I2C_CTL_SI_Msk)
                 if(--u32TimeOutCnt == 0) break;
 
@@ -799,6 +1070,30 @@ int main(void)
             I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
         }
 
+
+#else
+        /* Handle Slave timeout condition */
+        if(g_u8SlvTimeoutFlag)
+        {
+            printf(" SlaveTRx time out, any to reset IP\n");
+            getchar();
+            SYS->IPRST1 |= SYS_IPRST1_I2C0RST_Msk;
+            SYS->IPRST1 = 0;
+            I2C_Init();
+            g_u8SlvTimeoutFlag = 0;
+            g_u8SlvTRxAbortFlag = 1;
+        }
+        /* When I2C abort, clear SI to enter non-addressed SLV mode*/
+        if(g_u8SlvTRxAbortFlag)
+        {
+            g_u8SlvTRxAbortFlag = 0;
+            u32TimeOutCnt = 10;//I2C_TIMEOUT;
+            while(I2C0->CTL & I2C_CTL_SI_Msk)
+                if(--u32TimeOutCnt == 0) break;
+
+            printf("I2C Slave re-start. status[0x%x]\n", I2C0->STATUS);
+            I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+        }
 
 #endif
 	
@@ -985,11 +1280,6 @@ void SYS_Init(void)
 	GPIO_SetMode(PA, BIT14, GPIO_MODE_OUTPUT); 	// S1
 	GPIO_SetMode(PA, BIT15, GPIO_MODE_OUTPUT);  // S2s
 
-	PA12 = 1;
-	PA13 = 1;
-	PA14 = 0;
-	PA15 = 0;
-	PA12 = 1;
 	
 }
 void Timer_Init(void)
@@ -1117,27 +1407,20 @@ void I2C_Init(void)
     /* Set I2C 4 Slave Addresses */
     I2C_SetSlaveAddr(I2C0, 0, 0x15, 0);   /* Slave Address : 0x15 */
 
-
     /* Set I2C 4 Slave Addresses Mask */
-    I2C_SetSlaveAddrMask(I2C0, 0, 0x01);
+//    I2C_SetSlaveAddrMask(I2C0, 0, 0x01);
 
+   // I2C_SetSlaveAddr(I2C1, 0, 0x48, 0);   /* Slave Address : 0x48 */
 
     /* Enable I2C interrupt */
     I2C_EnableInt(I2C0);
     NVIC_EnableIRQ(I2C0_IRQn);
     /* Enable I2C interrupt */
     I2C_EnableInt(I2C1);
-    NVIC_EnableIRQ(I2C1_IRQn);
+  //  NVIC_EnableIRQ(I2C1_IRQn);
 
 
 
-
-
-    /* Set I2C 4 Slave Addresses */
- //   I2C_SetSlaveAddr(I2C1, 0, 0x48, 0);   /* Slave Address : 0x15 */
-//    I2C_SetSlaveAddr(I2C1, 1, 0x35, 0);   /* Slave Address : 0x35 */
-//    I2C_SetSlaveAddr(I2C1, 2, 0x55, 0);   /* Slave Address : 0x55 */
- //   I2C_SetSlaveAddr(I2C1, 3, 0x75, 0);   /* Slave Address : 0x75 */
 
 
 
