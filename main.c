@@ -12,8 +12,35 @@
 #include "M451Series.h"
 #include "arm_math.h"
 
+
 #define PLLCTL_SETTING      CLK_PLLCTL_72MHz_HXT
 #define PLL_CLOCK           72000000
+
+
+
+
+
+/* Function prototype declaration */
+void SYS_Init(void);
+void SPI_Init(void);
+void UART_Init(void);
+void I2C_Init(void);
+void Timer_Init(void);
+void RS485_SendAddressByte(uint8_t u8data);
+void RS485_SendDataByte(uint8_t *pu8TxBuf, uint32_t u32WriteBytes);
+void RS485_9bitModeMaster(void);
+void SPI2_IRQHandler(void);
+void UART0_IRQHandler(void);
+void I2C_SlaveTRx(uint32_t u32Status);
+
+
+void TMR1_IRQHandler(void);
+void I2C0_IRQHandler(void);
+void I2C1_IRQHandler(void);
+void Delay(uint32_t delayCnt);
+
+int get_PinValue();
+
 /*---------------------------------------------------------------------------------------------------------*/
 /* Global variables                                                                                       */
 /*---------------------------------------------------------------------------------------------------------*/
@@ -68,91 +95,88 @@ typedef void (*I2C_FUNC)(uint32_t u32Status);
 static I2C_FUNC s_I2C0HandlerFn = NULL;
 static I2C_FUNC s_I2C1HandlerFn = NULL;
 
-uint32_t slave_buff_addr;
+
 
 /*---------------------------------------------------------------------------------------------------------*/
-/* Global variables                                                                                        */
+/* Global variables I2C Slave                                                                                       */
 /*---------------------------------------------------------------------------------------------------------*/
-
-
-
-volatile uint8_t g_u8DeviceAddr;
-volatile uint8_t g_au8MstTxData[3];
-volatile uint8_t g_u8MstRxData;
-volatile uint8_t g_u8MstDataLen;
-volatile uint8_t g_u8MstEndFlag = 0;
-
-/* Function prototype declaration */
-void SYS_Init(void);
-void SPI_Init(void);
-void UART_Init(void);
-void I2C_Init(void);
-void Timer_Init(void);
-void RS485_SendAddressByte(uint8_t u8data);
-void RS485_SendDataByte(uint8_t *pu8TxBuf, uint32_t u32WriteBytes);
-void RS485_9bitModeMaster(void);
-void SPI2_IRQHandler(void);
-void UART0_IRQHandler(void);
-void I2C_SlaveTRx(uint32_t u32Status);
-
-
-void TMR1_IRQHandler(void);
-void I2C0_IRQHandler(void);
-void I2C1_IRQHandler(void);
-void Delay(uint32_t delayCnt);
-
-int get_PinValue();
-/************************************************************************
- * DESCRIPTION:
- * INPUT      : none
- * RETURN     : none
- ************************************************************************/
-void Delay(uint32_t delayCnt)
-{
-    while (delayCnt--) {
-        __NOP();
-        __NOP();
-    }
-}
-
 static uint32_t slave_buff_addr;
 static uint8_t g_au8SlvData[256];
 static uint8_t g_au8SlvRxData[3];
 static volatile uint8_t g_u8SlvTRxAbortFlag = 0;
-static volatile uint8_t g_u8TimeoutFlag = 0;
-
-volatile uint8_t g_u8DeviceAddr;
+static volatile uint8_t g_u8SlvTimeoutFlag = 0;
+volatile uint8_t g_u8SlvDeviceAddr;
 volatile uint8_t g_u8SlvDataLen;
 
+/*---------------------------------------------------------------------------------------------------------*/
+/* Global variables I2C Master                                                                                      */
+/*---------------------------------------------------------------------------------------------------------*/
 
+
+
+
+
+static volatile uint8_t g_u8MstDeviceAddr;
+static volatile uint8_t g_au8MstTxData[3];
+static volatile uint8_t g_u8MstRxData;
+static volatile uint8_t g_u8MstDataLen;
+static volatile uint8_t g_u8MstEndFlag = 0;
+static volatile uint8_t g_u8MstTxAbortFlag = 0;
+static volatile uint8_t g_u8MstRxAbortFlag = 0;
+static volatile uint8_t g_u8MstReStartFlag = 0;
+static volatile uint8_t g_u8MstTimeoutFlag = 0;
+
+
+/*---------------------------------------------------------------------------------------------------------*/
+/*  I2C0 IRQ Handler                                                                                       */
+/*---------------------------------------------------------------------------------------------------------*/
 void I2C0_IRQHandler(void)
 {
     uint32_t u32Status;
-	printf("Status I2C0_IRQHandler processed\n");
-
+	
     u32Status = I2C_GET_STATUS(I2C0);
+	printf("[Slave] I2C0_IRQHandler Proccesed\n");
 
     if(I2C_GET_TIMEOUT_FLAG(I2C0))
     {
         /* Clear I2C0 Timeout Flag */
         I2C_ClearTimeoutFlag(I2C0);
-        g_u8TimeoutFlag = 1;
+        g_u8SlvTimeoutFlag = 1;
     }
     else
     {
-        //if(s_I2C0HandlerFn != NULL)
-           // s_I2C0HandlerFn(u32Status);
-           I2C_SlaveTRx(u32Status);
+        if(s_I2C0HandlerFn != NULL)
+            s_I2C0HandlerFn(u32Status);
+    }
+}
+/*---------------------------------------------------------------------------------------------------------*/
+/*  I2C1 IRQ Handler                                                                                       */
+/*---------------------------------------------------------------------------------------------------------*/
+void I2C1_IRQHandler(void)
+{
+    uint32_t u32Status;
+	//printf("[Master] I2C1_IRQHandler Proccesed\n");
+
+    u32Status = I2C_GET_STATUS(I2C1);
+
+    if(I2C_GET_TIMEOUT_FLAG(I2C1))
+    {
+        /* Clear I2C1 Timeout Flag */
+        I2C_ClearTimeoutFlag(I2C1);
+        g_u8MstTimeoutFlag = 1;
+    }
+    else
+    {
+        if(s_I2C1HandlerFn != NULL)
+            s_I2C1HandlerFn(u32Status);
     }
 }
 
 /*---------------------------------------------------------------------------------------------------------*/
-/*  I2C TRx Callback Function                                                                               */
+/*  I2C TRx Callback Function                                                                              */
 /*---------------------------------------------------------------------------------------------------------*/
 void I2C_SlaveTRx(uint32_t u32Status)
 {
-	printf("I2C_SlaveTRx  processed\n");
-
     if(u32Status == 0x60)                       /* Own SLA+W has been receive; ACK has been return */
     {
         g_u8SlvDataLen = 0;
@@ -219,36 +243,16 @@ void I2C_SlaveTRx(uint32_t u32Status)
     }
 }
 
-
-void I2C1_IRQHandler(void)
-{
-    uint32_t u32Status;
-	printf("I2C1_IRQHandler processed\n");
-
-    u32Status = I2C_GET_STATUS(I2C1);
-
-    if(I2C_GET_TIMEOUT_FLAG(I2C1))
-    {
-        /* Clear I2C0 Timeout Flag */
-        I2C_ClearTimeoutFlag(I2C1);
-    }
-    else
-    {
-        if(s_I2C1HandlerFn != NULL)
-            s_I2C1HandlerFn(u32Status);
-    }
-
-}
 /*---------------------------------------------------------------------------------------------------------*/
 /*  I2C Rx Callback Function                                                                               */
 /*---------------------------------------------------------------------------------------------------------*/
 void I2C_MasterRx(uint32_t u32Status)
 {
-	printf("I2C_MasterRx processed\n");
+    uint32_t u32TimeOutCnt;
 
     if(u32Status == 0x08)                       /* START has been transmitted and prepare SLA+W */
     {
-        I2C_SET_DATA(I2C1, (g_u8DeviceAddr << 1));    /* Write SLA+W to Register I2CDAT */
+        I2C_SET_DATA(I2C1, (g_u8MstDeviceAddr << 1));    /* Write SLA+W to Register I2CDAT */
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
     }
     else if(u32Status == 0x18)                  /* SLA+W has been transmitted and ACK has been received */
@@ -258,7 +262,8 @@ void I2C_MasterRx(uint32_t u32Status)
     }
     else if(u32Status == 0x20)                  /* SLA+W has been transmitted and NACK has been received */
     {
-        I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI | I2C_CTL_STA_SI);
+        I2C_STOP(I2C1);
+        I2C_START(I2C1);
     }
     else if(u32Status == 0x28)                  /* DATA has been transmitted and ACK has been received */
     {
@@ -269,12 +274,12 @@ void I2C_MasterRx(uint32_t u32Status)
         }
         else
         {
-            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STA_SI);
         }
     }
     else if(u32Status == 0x10)                  /* Repeat START has been transmitted and prepare SLA+R */
     {
-        I2C_SET_DATA(I2C1, ((g_u8DeviceAddr << 1) | 0x01));   /* Write SLA+R to Register I2CDAT */
+        I2C_SET_DATA(I2C1, ((g_u8MstDeviceAddr << 1) | 0x01));   /* Write SLA+R to Register I2CDAT */
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
     }
     else if(u32Status == 0x40)                  /* SLA+R has been transmitted and ACK has been received */
@@ -283,14 +288,45 @@ void I2C_MasterRx(uint32_t u32Status)
     }
     else if(u32Status == 0x58)                  /* DATA has been received and NACK has been returned */
     {
-        g_u8MstRxData = (unsigned char) I2C_GET_DATA(I2C0);
+        g_u8MstRxData = (unsigned char) I2C_GET_DATA(I2C1);
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
         g_u8MstEndFlag = 1;
     }
     else
     {
-        /* TO DO */
-        printf("Status 0x%x is NOT processed\n", u32Status);
+        /* Error condition process */
+        printf("[MasterRx] Status [0x%x] Unexpected abort!! Anykey to re-start\n", u32Status);
+        if(u32Status == 0x38)                 /* Master arbitration lost, stop I2C and clear SI */
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        else if(u32Status == 0x30)            /* Master transmit data NACK, stop I2C and clear SI */
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        else if(u32Status == 0x48)            /* Master receive address NACK, stop I2C and clear SI */
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        else if(u32Status == 0x00)            /* Master bus error, stop I2C and clear SI */
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        else
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        /*Setting MasterRx abort flag for re-start mechanism*/
+        g_u8MstRxAbortFlag = 1;
+        getchar();
+        I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        u32TimeOutCnt = 100;//I2C_TIMEOUT;
+        while(I2C1->CTL & I2C_CTL_SI_Msk)
+            if(--u32TimeOutCnt == 0) break;
     }
 }
 /*---------------------------------------------------------------------------------------------------------*/
@@ -298,41 +334,196 @@ void I2C_MasterRx(uint32_t u32Status)
 /*---------------------------------------------------------------------------------------------------------*/
 void I2C_MasterTx(uint32_t u32Status)
 {
-	printf("I2C_MasterTx processed\n");
+    uint32_t u32TimeOutCnt;
 
     if(u32Status == 0x08)                       /* START has been transmitted */
     {
-        I2C_SET_DATA(I2C0, g_u8DeviceAddr << 1);    /* Write SLA+W to Register I2CDAT */
-        I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI);
+        I2C_SET_DATA(I2C1, g_u8MstDeviceAddr << 1);    /* Write SLA+W to Register I2CDAT */
+        I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
     }
     else if(u32Status == 0x18)                  /* SLA+W has been transmitted and ACK has been received */
     {
-        I2C_SET_DATA(I2C0, g_au8MstTxData[g_u8MstDataLen++]);
-        I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI);
+        I2C_SET_DATA(I2C1, g_au8MstTxData[g_u8MstDataLen++]);
+        I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
     }
     else if(u32Status == 0x20)                  /* SLA+W has been transmitted and NACK has been received */
     {
-        I2C_SET_CONTROL_REG(I2C0,  I2C_CTL_STO_SI | I2C_CTL_STA_SI);
+        I2C_STOP(I2C1);
+        I2C_START(I2C1);
     }
     else if(u32Status == 0x28)                  /* DATA has been transmitted and ACK has been received */
     {
         if(g_u8MstDataLen != 3)
         {
-            I2C_SET_DATA(I2C0, g_au8MstTxData[g_u8MstDataLen++]);
-            I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI);
+            I2C_SET_DATA(I2C1, g_au8MstTxData[g_u8MstDataLen++]);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
         }
         else
         {
-            I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
             g_u8MstEndFlag = 1;
         }
     }
     else
     {
-        /* TO DO */
-        printf("Status 0x%x is NOT processed\n", u32Status);
+        /* Error condition process */
+        printf("[MasterTx] Status [0x%x] Unexpected abort!! Anykey to re-start\n", u32Status);
+
+        if(u32Status == 0x38)                   /* Master arbitration lost, stop I2C and clear SI */
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        else if(u32Status == 0x00)              /* Master bus error, stop I2C and clear SI */
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        else if(u32Status == 0x30)              /* Master transmit data NACK, stop I2C and clear SI */
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        else if(u32Status == 0x48)              /* Master receive address NACK, stop I2C and clear SI */
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        else if(u32Status == 0x10)              /* Master repeat start, clear SI */
+        {
+            I2C_SET_DATA(I2C1, (uint32_t)((g_u8MstDeviceAddr << 1) | 0x01));   /* Write SLA+R to Register I2CDAT */
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        else
+        {
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        }
+        /*Setting MasterTRx abort flag for re-start mechanism*/
+        g_u8MstTxAbortFlag = 1;
+        getchar();
+        I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        u32TimeOutCnt = 100;//I2C_TIMEOUT;
+        while(I2C1->CTL & I2C_CTL_SI_Msk)
+            if(--u32TimeOutCnt == 0) break;
     }
 }
+
+int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
+{
+	uint32_t i;
+    do
+    {
+        /* Enable I2C timeout */
+        I2C_EnableTimeout(I2C1, 0);
+        g_u8MstReStartFlag = 0;
+        g_u8MstDeviceAddr = slvaddr;
+        g_u8MstTimeoutFlag = 0;
+
+        for(i = 0; i < 0x100; i++)
+        {
+            g_au8MstTxData[0] = (uint8_t)((i & 0xFF00) >> 8);
+            g_au8MstTxData[1] = (uint8_t)(i & 0x00FF);
+            g_au8MstTxData[2] = (uint8_t)(g_au8MstTxData[1] + 3);
+
+            g_u8MstDataLen = 0;
+            g_u8MstEndFlag = 0;
+
+            /* I2C function to write data to slave */
+            s_I2C1HandlerFn = (I2C_FUNC)I2C_MasterTx;
+
+            /* I2C as master sends START signal */
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STA);
+
+            /* Wait I2C Tx Finish or Unexpected Abort */
+            do
+            {
+                if(g_u8MstTimeoutFlag)
+                {
+                    printf(" MasterTx time out, any to reset IP\n");
+                    getchar();
+                    SYS->IPRST1 |= SYS_IPRST1_I2C1RST_Msk;
+                    SYS->IPRST1 = 0;
+                    I2C_Init();
+                    /* Set MasterTx abort flag */
+                    g_u8MstTxAbortFlag = 1;
+                }
+            } while(g_u8MstEndFlag == 0 && g_u8MstTxAbortFlag == 0);
+
+            g_u8MstEndFlag = 0;
+
+            if(g_u8MstTxAbortFlag)
+            {
+                /* Clear MasterTx abort flag */
+                g_u8MstTxAbortFlag = 0;
+                /* Set Master re-start flag */
+                g_u8MstReStartFlag = 1;
+                break;
+            }
+
+            /* I2C function to read data from slave */
+            s_I2C1HandlerFn = (I2C_FUNC)I2C_MasterRx;
+
+            g_u8MstDataLen = 0;
+            g_u8MstDeviceAddr = slvaddr;
+
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STA);
+
+            /* Wait I2C Rx Finish or Unexpected Abort */
+            do {
+                if(g_u8MstTimeoutFlag)
+                {
+                    /* When I2C timeout, reset IP */
+                    printf(" MasterRx time out, any to reset IP\n");
+                    getchar();
+                    SYS->IPRST1 |= SYS_IPRST1_I2C1RST_Msk;
+                    SYS->IPRST1 = 0;
+                    I2C_Init();
+                    /* Set MasterRx abort flag */
+                    g_u8MstRxAbortFlag = 1;
+                }
+            } while(g_u8MstEndFlag == 0 && g_u8MstRxAbortFlag == 0);
+
+            g_u8MstEndFlag = 0;
+
+            if(g_u8MstRxAbortFlag )
+            {
+                /* Clear MasterRx abort flag */
+                g_u8MstRxAbortFlag = 0;
+                /* Set Master re-start flag */
+                g_u8MstReStartFlag = 1;
+                break;
+            }
+        }
+    } while(g_u8MstReStartFlag); /*If unexpected abort happens, re-start the transmition*/
+
+    /* Compare data */
+    if(g_u8MstRxData != g_au8MstTxData[2])
+    {
+        printf("I2C Byte Write/Read Failed, Data 0x%x\n", g_u8MstRxData);
+        return -1;
+    }
+
+    printf("Master Access Slave (0x%X) Test OK\n", slvaddr);
+
+    return 0;
+
+}
+
+
+/************************************************************************
+ * DESCRIPTION:
+ * INPUT      : none
+ * RETURN     : none
+ ************************************************************************/
+void Delay(uint32_t delayCnt)
+{
+    while (delayCnt--) {
+        __NOP();
+        __NOP();
+    }
+}
+
 
 void UART0_IRQHandler(void)
 {
@@ -533,35 +724,83 @@ int main(void)
 	
 
 
+    printf("\n");
+    printf(" == No Mask Address ==\n");
+    I2C1_Read_Write_SLAVE(0x48);
+    //I2C1_Read_Write_SLAVE(0x49);
 
+    printf("SLAVE Address test OK.\n");
 
+    /* Access Slave with address mask */
+    printf("\n");
+    printf(" == Mask Address ==\n");
+  //  I2C1_Read_Write_SLAVE(0x48 & ~0x01);
+  //  I2C1_Read_Write_SLAVE(0x49 & ~0x04);
+    printf("SLAVE Address Mask test OK.\n");
 
-
-    s_I2C1HandlerFn = NULL;
 	
-
-
-
-
+#if 1
 	/* I2C enter no address SLV mode */
-	   I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+	  I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
 	
-	   for(i = 0; i < 0x100; i++)
-	   {
-		   g_au8SlvData[i] = 0;
-	   }
+	  for(i = 0; i < 0x100; i++)
+	  {
+		  g_au8SlvData[i] = 0;
+	  }
 	
-	   /* I2C function to Slave receive/transmit data */
+	  /* I2C function to Slave receive/transmit data */
+	  s_I2C0HandlerFn = I2C_SlaveTRx;
 	
-	   printf("\n");
-	   printf("I2C Slave Mode is Running.\n");
+	  printf("\n");
+	  printf("I2C Slave Mode is Running.\n");
 	
-	   g_u8TimeoutFlag = 0;
+	  g_u8SlvTimeoutFlag = 0;
+
+
+#endif
+
+
 
     while(1)
     {
-    	I2C_SET_DATA(I2C0, 'a');
-        I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+    		if(g_485_flags && g_u32_485RxDataCount == 16)
+		{
+			printf("485 : \n ");
+			for(i=0;i<g_u32_485RxDataCount;i++)
+			{
+				 printf("[%d:0x%02x] ", i,g_fault_RecvData[i]);
+	
+			}
+			printf("\n ");
+			g_485_flags = 0 ;
+			g_u32_485RxDataCount=0;
+		}
+#if 1
+        /* Handle Slave timeout condition */
+        if(g_u8SlvTimeoutFlag)
+        {
+            printf(" SlaveTRx time out, any to reset IP\n");
+            //getchar();
+            SYS->IPRST1 |= SYS_IPRST1_I2C0RST_Msk;
+            SYS->IPRST1 = 0;
+            I2C_Init();
+            g_u8SlvTimeoutFlag = 0;
+            g_u8SlvTRxAbortFlag = 1;
+        }
+        /* When I2C abort, clear SI to enter non-addressed SLV mode*/
+        if(g_u8SlvTRxAbortFlag)
+        {
+            g_u8SlvTRxAbortFlag = 0;
+            u32TimeOutCnt = 100;//I2C_TIMEOUT;
+            while(I2C0->CTL & I2C_CTL_SI_Msk)
+                if(--u32TimeOutCnt == 0) break;
+
+            printf("I2C Slave re-start. status[0x%x]\n", I2C0->STATUS);
+            I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+        }
+
+
+#endif
 	
 
 
@@ -588,113 +827,16 @@ int main(void)
    
    		}
 #endif
-		if(g_485_flags && g_u32_485RxDataCount == 16)
-		{
-			printf("485 : \n ");
-			for(i=0;i<g_u32_485RxDataCount;i++)
-			{
-				 printf("[%d:0x%02x] ", i,g_fault_RecvData[i]);
-	
-			}
-			printf("\n ");
-			g_485_flags = 0 ;
-			g_u32_485RxDataCount=0;
-		}
 
-        /* Handle Slave timeout condition */
-        if(g_u8TimeoutFlag)
-        {
-            printf(" SlaveTRx time out, any to reset IP\n");
-            getchar();
-            SYS->IPRST1 |= SYS_IPRST1_I2C0RST_Msk;
-            SYS->IPRST1 = 0;
-            I2C_Init();
-            g_u8TimeoutFlag = 0;
-            g_u8SlvTRxAbortFlag = 1;
-        }
-        /* When I2C abort, clear SI to enter non-addressed SLV mode*/
-        if(g_u8SlvTRxAbortFlag)
-        {
-            g_u8SlvTRxAbortFlag = 0;
-            u32TimeOutCnt = 100000;//I2C_TIMEOUT;
-            while(I2C0->CTL & I2C_CTL_SI_Msk)
-                if(--u32TimeOutCnt == 0) break;
 
-            printf("I2C Slave re-start. status[0x%x]\n", I2C0->STATUS);
-            I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
-        }		
-		
+ 
    }
    
 
 
 
 }
-void Timer_Init(void)
-{
-	 uint32_t i, CalTime;
 
-	
-	 /* Init TIMER0 for performance comparing */
-	  TIMER_Open(TIMER0, TIMER_CONTINUOUS_MODE, 1);
-	
-	  TIMER_Start(TIMER0);
-	
-	  /************************* DSP PID ******************************/
-	  /* Initial DSP PID controller function*/
-	//	arm_pid_init_f32(&PIDS,0);
-	
-	  /* Calculate PID controller function 100 times*/
-	  for(i = 1; i < 100; i++)
-	  {
-		  output[i] = arm_pid_f32(&PIDS,ee);
-		  ee = target-output[i-1];
-	  }
-	
-	  TIMER_Close(TIMER0);
-	  CalTime = TIMER_GetCounter(TIMER0);
-	  printf("\nDSP PID: It took %d HXT clocks\n", CalTime);
-	
-	  /********************** Software PID ****************************/
-	  /* Re-Initialization TIMER0 for performance comparing */
-	  TIMER_Open(TIMER0, TIMER_CONTINUOUS_MODE, 1);
-	
-	  TIMER_Start(TIMER0);
-	
-	  /* Calculate PID controller function 100 times*/
-	  for(i = 1; i < 100; i++)
-	  {
-		  output[i] = PID(ee);
-		  ee = target-output[i-1];
-	  }
-	
-	  TIMER_Close(TIMER0);
-	  CalTime = TIMER_GetCounter(TIMER0);
-	  printf("Software PID: It took %d HXT clocks\n", CalTime);
-	  printf("\n\nCPU @ %dHz\n", SystemCoreClock);
-	  
-	  
-		
-	
-	
-	  /* Enable peripheral clock */
-	  CLK_EnableModuleClock(TMR1_MODULE);
-	  CLK_SetModuleClock(TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_HIRC, 0);
-	  TIMER_Open(TIMER1, TIMER_PERIODIC_MODE, 10000);
-	  TIMER_EnableInt(TIMER1);
-	  /* Enable Timer1 NVIC */
-	  NVIC_EnableIRQ(TMR1_IRQn);
-	
-	  /*setting RGB LED*/
-	  LED1_R=100;
-	  LED1_G=100;
-	  LED1_B=100;
-	  Blink=10;
-	  brea=1;
-	
-	  TIMER_Start(TIMER1);
-
-}
 void SYS_Init(void)
 {
     /*---------------------------------------------------------------------------------------------------------*/
@@ -765,17 +907,18 @@ void SYS_Init(void)
     SYS->GPA_MFPH |= (SYS_GPA_MFPH_PA12MFP_GPIO | SYS_GPA_MFPH_PA13MFP_GPIO | SYS_GPA_MFPH_PA14MFP_GPIO |SYS_GPA_MFPH_PA15MFP_GPIO);	
 
 
+	  
+	/* I2C0 Master with iMON : I2C0   */
+    SYS->GPD_MFPL &= ~(SYS_GPD_MFPL_PD4MFP_Msk | SYS_GPD_MFPL_PD5MFP_Msk);
+    SYS->GPD_MFPL |= (SYS_GPD_MFPL_PD4MFP_I2C0_SDA | SYS_GPD_MFPL_PD5MFP_I2C0_SCL);	
+    /* I2C pins enable schmitt trigger */
+    //PA->SMTEN |= (GPIO_SMTEN_SMTEN2_Msk | GPIO_SMTEN_SMTEN3_Msk);///???
 	/* Tempture : I2C1   */
     SYS->GPE_MFPL &= ~(SYS_GPE_MFPL_PE5MFP_Msk | SYS_GPE_MFPL_PE4MFP_Msk);
     SYS->GPE_MFPL |= (SYS_GPE_MFPL_PE5MFP_I2C1_SDA | SYS_GPE_MFPL_PE4MFP_I2C1_SCL);	
     /* I2C1 ALRT */
 	//SYS->GPC_MFPL &= ~(SYS_GPC_MFPL_PC7MFP_Msk );
-	//SYS->GPC_MFPL |= (SYS_GPC_MFPL_PC7MFP_I2C1_SMBSUS );	  
-	/* I2C0 Master with iMON : I2C0   */
-    SYS->GPE_MFPL &= ~(SYS_GPD_MFPL_PD4MFP_Msk | SYS_GPD_MFPL_PD5MFP_Msk);
-    SYS->GPE_MFPL |= (SYS_GPD_MFPL_PD4MFP_I2C0_SDA | SYS_GPD_MFPL_PD5MFP_I2C0_SCL);	
-    /* I2C pins enable schmitt trigger */
-    //PA->SMTEN |= (GPIO_SMTEN_SMTEN2_Msk | GPIO_SMTEN_SMTEN3_Msk);///???
+	//SYS->GPC_MFPL |= (SYS_GPC_MFPL_PC7MFP_I2C1_SMBSUS );
 
 
 
@@ -843,11 +986,76 @@ void SYS_Init(void)
 	GPIO_SetMode(PA, BIT15, GPIO_MODE_OUTPUT);  // S2s
 
 	PA12 = 1;
-	PA13 = 0;
+	PA13 = 1;
 	PA14 = 0;
 	PA15 = 0;
-	PA12 = 0;
+	PA12 = 1;
 	
+}
+void Timer_Init(void)
+{
+	 uint32_t i, CalTime;
+
+	
+	 /* Init TIMER0 for performance comparing */
+	  TIMER_Open(TIMER0, TIMER_CONTINUOUS_MODE, 1);
+	
+	  TIMER_Start(TIMER0);
+	
+	  /************************* DSP PID ******************************/
+	  /* Initial DSP PID controller function*/
+	//	arm_pid_init_f32(&PIDS,0);
+	
+	  /* Calculate PID controller function 100 times*/
+	  for(i = 1; i < 100; i++)
+	  {
+		  output[i] = arm_pid_f32(&PIDS,ee);
+		  ee = target-output[i-1];
+	  }
+	
+	  TIMER_Close(TIMER0);
+	  CalTime = TIMER_GetCounter(TIMER0);
+	  printf("\nDSP PID: It took %d HXT clocks\n", CalTime);
+	
+	  /********************** Software PID ****************************/
+	  /* Re-Initialization TIMER0 for performance comparing */
+	  TIMER_Open(TIMER0, TIMER_CONTINUOUS_MODE, 1);
+	
+	  TIMER_Start(TIMER0);
+	
+	  /* Calculate PID controller function 100 times*/
+	  for(i = 1; i < 100; i++)
+	  {
+		  output[i] = PID(ee);
+		  ee = target-output[i-1];
+	  }
+	
+	  TIMER_Close(TIMER0);
+	  CalTime = TIMER_GetCounter(TIMER0);
+	  printf("Software PID: It took %d HXT clocks\n", CalTime);
+	  printf("\n\nCPU @ %dHz\n", SystemCoreClock);
+	  
+	  
+		
+	
+	
+	  /* Enable peripheral clock */
+	  CLK_EnableModuleClock(TMR1_MODULE);
+	  CLK_SetModuleClock(TMR1_MODULE, CLK_CLKSEL1_TMR1SEL_HIRC, 0);
+	  TIMER_Open(TIMER1, TIMER_PERIODIC_MODE, 10000);
+	  TIMER_EnableInt(TIMER1);
+	  /* Enable Timer1 NVIC */
+	  NVIC_EnableIRQ(TMR1_IRQn);
+	
+	  /*setting RGB LED*/
+	  LED1_R=100;
+	  LED1_G=100;
+	  LED1_B=100;
+	  Blink=10;
+	  brea=1;
+	
+	  TIMER_Start(TIMER1);
+
 }
 
 void SPI_Init(void)
@@ -882,7 +1090,7 @@ void UART_Init(void)
 
     UART_Open(UART0, 9600);
     /* Configure UART1: 115200, 8-bit word, no parity bit, 1 stop bit. */
-	printf("\nUART0:Fault Findder 485 Init\n");
+	printf("\n\nUART0:Fault Findder 485 Init\n");
 
     UART_Open(UART1, 115200);
 	printf("\nUART1:Debug Terminal\n");
@@ -897,48 +1105,42 @@ void UART_Init(void)
 void I2C_Init(void)
 {
 
+    /* Open I2C module and set bus clock */
+    I2C_Open(I2C0, 100000);  /* iMON Comm */
+	I2C_Open(I2C1,100000); /* Tempeture */
 
-
-	I2C_Open(I2C0,100000); /* iMON Comm */
-
-//	I2C_Open(I2C1,100000); /* Tempeture */
-
-//	printf ("I2C clock MPT100ON Comm  %d Hz\n",I2C_GetBusClockFreq(I2C1));
+    /* Get I2C0 Bus Clock */
 	printf ("I2C clock iMON Comm  %d Hz\n",I2C_GetBusClockFreq(I2C0));
+	printf ("I2C clock MPT100ON Comm  %d Hz\n",I2C_GetBusClockFreq(I2C1));
 
 
-
-
-
-	I2C_SetSlaveAddr(I2C0, 0, 0x15, 0);
-//	I2C_SetSlaveAddr(I2C0, 1, 0x35, 0);
-//	I2C_SetSlaveAddr(I2C0, 2, 0x55, 0);
-//	I2C_SetSlaveAddr(I2C0, 3, 0x75, 0);
-
-
-	I2C_SetSlaveAddrMask(I2C0, 0, 0x01);
-	I2C_SetSlaveAddrMask(I2C0, 1, 0x04);
-	I2C_SetSlaveAddrMask(I2C0, 2, 0x01);
-	I2C_SetSlaveAddrMask(I2C0, 3, 0x04);
-
-	I2C_EnableInt(I2C0);
-	I2C_EnableWakeup(I2C0);
-
-	NVIC_EnableIRQ(I2C0_IRQn);
-
-
-
-#if 0
     /* Set I2C 4 Slave Addresses */
-    I2C_SetSlaveAddr(I2C1, 0, 0x48, 0);   /* Slave Address : 0x15 */
+    I2C_SetSlaveAddr(I2C0, 0, 0x15, 0);   /* Slave Address : 0x15 */
+
+
+    /* Set I2C 4 Slave Addresses Mask */
+    I2C_SetSlaveAddrMask(I2C0, 0, 0x01);
+
+
+    /* Enable I2C interrupt */
+    I2C_EnableInt(I2C0);
+    NVIC_EnableIRQ(I2C0_IRQn);
+    /* Enable I2C interrupt */
+    I2C_EnableInt(I2C1);
+    NVIC_EnableIRQ(I2C1_IRQn);
+
+
+
+
+
+    /* Set I2C 4 Slave Addresses */
+ //   I2C_SetSlaveAddr(I2C1, 0, 0x48, 0);   /* Slave Address : 0x15 */
 //    I2C_SetSlaveAddr(I2C1, 1, 0x35, 0);   /* Slave Address : 0x35 */
 //    I2C_SetSlaveAddr(I2C1, 2, 0x55, 0);   /* Slave Address : 0x55 */
  //   I2C_SetSlaveAddr(I2C1, 3, 0x75, 0);   /* Slave Address : 0x75 */
 
-    /* Enable I2C interrupt */
-    I2C_EnableInt(I2C1);
-    NVIC_EnableIRQ(I2C1_IRQn);
-#endif 
+
+
 }
 
 /*** (C) COPYRIGHT 2014 Nuvoton Technology Corp. ***/
