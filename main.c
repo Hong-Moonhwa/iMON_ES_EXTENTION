@@ -59,10 +59,7 @@ float PID(float in)
 };
 
 
-uint8_t g_fault_finderData[8]  = {0x01, 0x03, 
-                                          0x00, 0x01, 
-                                          0x00, 0x06, 
-                                          0x94, 0x08};
+uint8_t g_fault_finderData[8]  = {0x0,};
 uint8_t g_fault_RecvData[32]  = {0,};
 uint8_t g_iMON_RecvData[64]  = {0,};
 
@@ -83,12 +80,17 @@ static I2C_FUNC s_I2C1HandlerFn = NULL;
 /* Global variables I2C Slave                                                                                       */
 /*---------------------------------------------------------------------------------------------------------*/
 static uint32_t slave_buff_addr;
-static uint8_t g_au8SlvData[256];
-static uint8_t g_au8SlvRxData[3];
+static uint8_t g_au8SlvData[32];
+static uint8_t g_au8SlvRxData[32];
 static volatile uint8_t g_u8SlvTRxAbortFlag = 0;
 static volatile uint8_t g_u8SlvTimeoutFlag = 0;
 volatile uint8_t g_u8SlvDeviceAddr;
 volatile uint8_t g_u8SlvDataLen;
+
+
+
+static uint8_t g_au8SlvCounter = 0;
+
 
 /*---------------------------------------------------------------------------------------------------------*/
 /* Global variables I2C Master                                                                                      */
@@ -114,7 +116,7 @@ void I2C0_IRQHandler(void)
     uint32_t u32Status;
 	
     u32Status = I2C_GET_STATUS(I2C0);
-	printf("\n[Slave] I2C0_IRQHandler Proccesed\n");
+	//printf("\n[Slave] I2C0_IRQHandler Proccesed\n");
 
     if(I2C_GET_TIMEOUT_FLAG(I2C0))
     {
@@ -130,13 +132,115 @@ void I2C0_IRQHandler(void)
 }
 
 
+
+int I2C_Reeceived_valid()
+{
+
+	if(g_au8SlvRxData[0] !=0xff)
+	{
+			return 1;
+	}
+	if(g_au8SlvRxData[1] !=0x01)
+	{
+			return 1;
+	}
+	if(g_au8SlvRxData[2] !=0x01)
+	{
+			return 1;
+	}
+	if(g_au8SlvRxData[3] !=0x00)
+	{
+			return 1;
+	}
+	if(g_au8SlvRxData[3] !=0x00)
+	{
+			return 1;
+	}
+	if(g_au8SlvRxData[3] !=0xf8)
+	{
+			return 1;
+	}
+
+	return 0;
+}
+
+void set_CRC16_faultfinder()
+{
+
+	uint8_t pin_value =0x0;
+
+	pin_value = get_PinValue();
+	g_fault_finderData[0] = pin_value;
+	g_fault_finderData[1] = 0x03;
+	g_fault_finderData[2] = 0x00;
+	g_fault_finderData[3] = 0x01;	
+
+	g_fault_finderData[4] = 0x00;
+	g_fault_finderData[5] = 0x06;
+
+
+
+	switch(pin_value)
+	{
+		case 0x1:
+			g_fault_finderData[6] = 0x94;
+			g_fault_finderData[7] = 0x08;
+			break;
+		case 0x2:
+			g_fault_finderData[6] = 0x94;
+			g_fault_finderData[7] = 0x3b;
+			break;
+
+		default :
+		
+	}
+
+}
+int I2C_Transmit_made()
+{
+	
+		 g_au8SlvData[0] = 0xff;
+		 g_au8SlvData[1] = get_PinValue();
+	     g_au8SlvData[2] = g_fault_RecvData[4];
+		 g_au8SlvData[3] = g_fault_RecvData[6];	 
+		 g_au8SlvData[4] = g_fault_RecvData[8];
+	     g_au8SlvData[5] = 0x01;
+		 g_au8SlvData[6] = g_fault_RecvData[12];
+	     g_au8SlvData[7] = g_fault_RecvData[14];
+
+		 g_au8SlvData[8] = 0x12;
+		 g_au8SlvData[9] = 0x34;
+
+		 g_au8SlvData[10] = 0x12;
+		 g_au8SlvData[11] = 0x34;
+
+		 g_au8SlvData[12] = 0x12;
+		 g_au8SlvData[13] = 0x34;
+
+		 g_au8SlvData[14] = 0x12;
+		 g_au8SlvData[15] = 0x34;		
+
+		 g_au8SlvData[16] = 0x0;
+		 g_au8SlvData[17] = 0x0;
+
+		 g_au8SlvData[18] = 0x0;
+		 g_au8SlvData[19] = 0x0;
+
+		 g_au8SlvData[20] = 0x0;
+		 g_au8SlvData[21] = 0x0;
+
+		 g_au8SlvData[22] = 0x0;
+		 g_au8SlvData[23] = 0x0;			 
+}
+
 /*---------------------------------------------------------------------------------------------------------*/
 /*  I2C TRx Callback Function                                                                              */
 /*---------------------------------------------------------------------------------------------------------*/
 void I2C_SlaveTRx(uint32_t u32Status)
 {
 
-	printf("\niMON I2C0 GET RAW Data 0x%x\n",(unsigned char) I2C_GET_DATA(I2C0));
+	//printf("\niMON I2C0 GET RAW Data 0x%x\n",(unsigned char) I2C_GET_DATA(I2C0));
+	//printf("\nI2C_SlaveTRx Status 0x%x\n",u32Status);
 
 
     if(u32Status == 0x60)                       /* Own SLA+W has been receive; ACK has been return */
@@ -147,27 +251,49 @@ void I2C_SlaveTRx(uint32_t u32Status)
     else if(u32Status == 0x80)                 /* Previously address with own SLA address
                                                    Data has been received; ACK has been returned*/
     {
-        g_au8SlvRxData[g_u8SlvDataLen] = (unsigned char) I2C_GET_DATA(I2C0);
-		printf("iMON I2C0 GET Data 0x%x",g_au8SlvRxData[g_u8SlvDataLen]);
-        g_u8SlvDataLen++;
+		g_au8SlvRxData[g_u8SlvDataLen] = (unsigned char) I2C_GET_DATA(I2C0);
 
-        if(g_u8SlvDataLen == 2)
+       	//printf("\niMON I2C0 GET Data 0x%02x\n",g_au8SlvRxData[g_u8SlvDataLen]);
+        g_u8SlvDataLen++;
+		
+
+
+
+		if(g_u8SlvDataLen == 6)
         {
-            slave_buff_addr = (g_au8SlvRxData[0] << 8) + g_au8SlvRxData[1];
-        }
-        if(g_u8SlvDataLen == 3)
-        {
-            g_au8SlvData[slave_buff_addr] = g_au8SlvRxData[2];
+        	slave_buff_addr=0;
+
             g_u8SlvDataLen = 0;
-        }
+
+			
+		}
+
 
         I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
     }
     else if(u32Status == 0xA8)                  /* Own SLA+R has been receive; ACK has been return */
     {
-        I2C_SET_DATA(I2C0, g_au8SlvData[slave_buff_addr]);
-        slave_buff_addr++;
-        I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+
+	    if(1)//I2C_Reeceived_valid==0)
+		{
+			//printf("\nI2C_Slave iMON Received Packet Valid.\n");
+			if(g_au8SlvCounter==24)
+			{
+				g_au8SlvCounter=0;
+			}
+    	
+        	I2C_SET_DATA(I2C0, g_au8SlvData[g_au8SlvCounter]);
+			g_au8SlvCounter++;
+		
+    	    I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+	    }
+		else
+		{ 
+			printf("\nI2C_Slave iMON Received Packet Mismatch.\n");
+			I2C_SET_DATA(I2C0, 0xff);
+    	    I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+			g_au8SlvCounter=0;
+		}
     }
     else if(u32Status == 0xC0)                 /* Data byte or last data in I2CDAT has been transmitted
                                                    Not ACK has been received */
@@ -185,6 +311,7 @@ void I2C_SlaveTRx(uint32_t u32Status)
     {
         g_u8SlvDataLen = 0;
         I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+
     }
     else
     {
@@ -321,6 +448,8 @@ void I2C_MasterRx(uint32_t u32Status)
             if(--u32TimeOutCnt == 0) break;
     }
 }
+
+
 /*---------------------------------------------------------------------------------------------------------*/
 /*  I2C Tx Callback Function                                                                               */
 /*---------------------------------------------------------------------------------------------------------*/
@@ -567,6 +696,36 @@ void I2C_readBytes( uint8_t regAddr, uint8_t length, uint8_t *data)
 #endif
 	//I2C_STOP( I2C1 );										 //Stop
 }
+void I2C0_writeBytes( uint8_t regAddr, uint8_t length, uint8_t *data) 
+{
+	uint8_t i;
+	uint8_t tmp;
+//	I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STA);
+
+//	I2C_START( I2C0 );                    //Start
+//	I2C_WAIT_READY( I2C0 );
+	I2C_SET_DATA( I2C0, ADS1115_ADDRESS  << 1);        //send slave address
+	I2C_SET_CONTROL_REG( I2C0, I2C_CTL_SI );
+//	I2C_WAIT_READY( I2C1 );
+
+	I2C_SET_DATA( I2C0, regAddr );        //send index
+	I2C_SET_CONTROL_REG( I2C0, I2C_CTL_SI );
+//	I2C_WAIT_READY( I2C0 );	
+#if 1
+	for ( i = 0; i < length; i ++) {
+		tmp = data[ i ];
+		I2C_SET_DATA( I2C1, tmp );            //send Data
+		I2C_SET_CONTROL_REG( I2C1, I2C_CTL_SI );
+	//	I2C_WAIT_READY( I2C0 );
+
+	}
+#endif
+
+
+	I2C_SET_CONTROL_REG(I2C0, I2C_CTL_STO_SI);
+
+	//I2C_STOP( I2C0 );					 //Stop
+}
 
 void I2C_writeBytes( uint8_t regAddr, uint8_t length, uint8_t *data) 
 {
@@ -744,17 +903,40 @@ void RS485_ReadDataByte(uint8_t *puRTxBuf, uint32_t u32ReadBytes)
 }
 
 
-int get_PinValue()
+uint8_t get_PinValue()
 {
-	printf("\nSwitch IN1[%x]",PB0);//->PIN);
-	printf(" IN2[%x]",PB1);//->PIN << 1);
-	printf(" IN3[%x]",PB2);//->PIN << 2);
-	printf(" IN4[%x]",PB3);//->PIN << 3);
-	printf(" IN5[%x]",PB4);//->IN << 4);
-	printf(" IN6[%x]",PB5);//->PIN << 5);
-	printf(" IN7[%x]",PB6);//->PIN << 6);
-	printf(" IN8[%x]\n\n",PB7);//->PIN << 7);		
-	return 0;
+	uint8_t pin_array[8]={0x0,}, get_pin_value=0x0;
+#if 0
+	printf("\nSwitch IN8[%x]\n\n",0x1  & ~(PB0));//->PIN);
+	printf(" IN7[%x]",0x1  & ~(PB1));//->PIN << 1);
+	printf(" IN6[%x]",0x1  & ~(PB2));//->PIN << 2);
+	printf(" IN5[%x]",0x1  & ~(PB3));//->PIN << 3);
+	printf(" IN4[%x]",0x1  & ~(PB4));//->IN << 4);
+	printf(" IN3[%x]",0x1  & ~(PB5));//->PIN << 5);
+	printf(" IN2[%x]",0x1  & ~(PB6));//->PIN << 6);
+	printf("IN1[%x]\n\n",0x1  & ~(PB7));//->PIN << 7);
+#endif
+
+	pin_array[7]= 0x80  & ((0x1  & ~PB0) << 7 );
+	pin_array[6]= 0x40  & ((0x1  & ~PB1) << 6 );
+	pin_array[5]= 0x20  & ((0x1  & ~PB2) << 5 );
+	pin_array[4]= 0x10  & ((0x1  & ~PB3) << 4 );
+	pin_array[3]= 0x08  & ((0x1  & ~PB4) << 3 );
+	pin_array[2]= 0x04  & ((0x1  & ~PB5) << 2 );
+	pin_array[1]= 0x02  & ((0x1  & ~PB6) << 1 );
+	pin_array[0]= 0x01  & (0x1  & ~PB7 );
+
+	get_pin_value = pin_array[7] | \
+					pin_array[6] | \
+					pin_array[5] | \
+					pin_array[4] | \
+					pin_array[3] | \
+					pin_array[2] | \
+					pin_array[1] | \
+					pin_array[0];
+	printf("\nPin Value [%x]\n\n",get_pin_value);//->PIN << 7);
+
+	return get_pin_value;
 
 }
 /* ------------- */
@@ -805,29 +987,35 @@ int main(void)
     printf("\n");
 
  
+	set_CRC16_faultfinder();
 
 	get_PinValue();
 
 	Timer_Init();
 
+		PA12 = 0; /* EN */
+		Delay(50000);
+		PA12 = 1; /* EN */
+				Delay(50000);
+	//PA12 = 0; /* EN */
 
-	
-	PA12 = 0; /* EN */
 
-
-	PA13 = 1; /* S0 */
+	PA13 = 0; /* S0 */
 	PA14 = 0; /* S1 */
 	PA15 = 0; /* S2 */
+	for(i = 0; i < 32; i++)
+    {
+        g_au8SlvData[i] = 0x0;
+    }
+
 
 #if 1
 
     /* I2C enter no address SLV mode */
     I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
 
-//    for(i = 0; i < 0x100; i++)
- //   {
-  //      g_au8SlvData[i] = 0;
-   // }
+
+ 
 
     /* I2C function to Slave receive/transmit data */
     s_I2C0HandlerFn = I2C_SlaveTRx;
@@ -877,7 +1065,17 @@ int main(void)
 	I2C_writeBytes(0x01, 2,config_data);
 
 
-	//Delay(50000);
+	Delay(50000);
+
+
+	I2C_readBytes(0x01, 2, read_data );
+	
+
+	printf("\nDigital Value 1 of Analog Input :[0x%d] [0x%x]  \n", \
+																read_data[0], \
+																read_data[1]);
+
+	
 	I2C_readBytes(0x03, 2, read_data );
 	
 
@@ -926,7 +1124,7 @@ int main(void)
 
 
 	I2C_writeBytes(0x01, 2,config_data);
-	Delay(50000);
+	//Delay(50000);
 	I2C_readBytes(0x00, 2, read_data );
 
 	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
@@ -960,7 +1158,7 @@ int main(void)
 
 
 	I2C_writeBytes(0x01, 2,config_data);
-	Delay(50000);
+	//Delay(50000);
 	I2C_readBytes(0x00, 2, read_data );
 
 	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
@@ -994,7 +1192,7 @@ int main(void)
 
 
 	I2C_writeBytes(0x01, 2,config_data);
-	Delay(50000);
+//	Delay(50000);
 	I2C_readBytes(0x00, 2, read_data );
 
 	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
@@ -1028,7 +1226,7 @@ int main(void)
 
 
 	I2C_writeBytes(0x01, 2,config_data);
-	Delay(50000);
+	//Delay(50000);
 	I2C_readBytes(0x00, 2, read_data );
 
 	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
@@ -1061,7 +1259,7 @@ int main(void)
 
 
 	I2C_writeBytes(0x01, 2,config_data);
-	Delay(50000);
+	//Delay(50000);
 	I2C_readBytes(0x00, 2, read_data );
 
 	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
@@ -1095,7 +1293,7 @@ int main(void)
 
 
 	I2C_writeBytes(0x01, 2,config_data);
-	Delay(50000);
+	//Delay(50000);
 	I2C_readBytes(0x00, 2, read_data );
 
 	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
@@ -1129,7 +1327,7 @@ int main(void)
 
 
 	I2C_writeBytes(0x01, 2,config_data);
-	Delay(50000);
+	//Delay(50000);
 	I2C_readBytes(0x00, 2, read_data );
 
 	 raw_adc = ((read_data[0] & 0xFF) * 256) + (read_data[1] & 0xFF);
@@ -1176,6 +1374,7 @@ int main(void)
 #endif
 
 
+
     RS485_SendDataByte(g_fault_finderData, 8);
 
 
@@ -1192,6 +1391,7 @@ int main(void)
 			printf("\n ");
 			g_485_flags = 0 ;
 			g_u32_485RxDataCount=0;
+			I2C_Transmit_made();
 		}
 #if 0
         /* Handle Slave timeout condition */
