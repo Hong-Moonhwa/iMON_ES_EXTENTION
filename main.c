@@ -905,7 +905,7 @@ uint8_t get_TemptureValue()
 	*/
 
 	uint8_t bit_array[3]={0x0,},i;
-   uint16_t setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE  | /* 0x8000 */
+   uint16_t setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE  | /* 0x8000 ADS1115_CONFIG_REGISTER_OS_NO_EFFECT or ADS1115_CONFIG_REGISTER_OS_SINGLE */
 			 ADS1115_CONFIG_REGISTER_PGA_2_048	  | 		 /* 0x0400 (default) */
 			 ADS1115_CONFIG_REGISTER_MODE_SINGLE  | 		 /* 0x0100 (default) ADS1115_CONFIG_REGISTER_MODE_CONTINUE or ADS1115_CONFIG_REGISTER_MODE_SINGLE */  
 			 ADS1115_CONFIG_REGISTER_DR_128_SPS   | 		 /* 0x0080 (default) */  
@@ -933,7 +933,7 @@ uint8_t get_TemptureValue()
 	
 
 
-#if 1
+#if 0
 			 printf("\n\n");
 
 			 /* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_0_1  */
@@ -968,7 +968,7 @@ uint8_t get_TemptureValue()
 			  printf("Digital Value 2 of Analog Input :[%d]  [%5.2f C]\n\n",	 raw_adc,(g_u8MstRxData[0]*3.3 - 0.5)*100);
 #endif
 	
-#if 1
+#if 0
 			 printf("\nn");
 
 			 /* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3  */
@@ -985,7 +985,7 @@ uint8_t get_TemptureValue()
 				printf("Digital Value 3 of Analog Input :[%d]  [%5.2f C]\n\n",	 raw_adc,(g_u8MstRxData[0]*3.3 - 0.5)*100);
 #endif
 	
-#if 1
+#if 0
 			 printf("\nn");
 
 			 /* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_2_3  */
@@ -1003,7 +1003,7 @@ uint8_t get_TemptureValue()
 #endif
 	
 	
-#if 1
+#if 0
 			 printf("\nn");
 
 			 /* ############## ADS1115_CONFIG_REGISTER_MUX_SINGLE_0  */
@@ -1022,7 +1022,7 @@ uint8_t get_TemptureValue()
 	
 	
 	
-#if 1
+#if 0
 			 printf("\nn");
 
 			 /* ############## ADS1115_CONFIG_REGISTER_MUX_SINGLE_1  */
@@ -1041,7 +1041,7 @@ uint8_t get_TemptureValue()
 	
 	
 	
-#if 1
+#if 0
 			 printf("\nn");
 
 			 /* ############## ADS1115_CONFIG_REGISTER_MUX_SINGLE_2  */
@@ -1059,7 +1059,7 @@ uint8_t get_TemptureValue()
 				printf("Digital Value 7 of Analog Input :[%d]  [%5.2f C]\n\n",	 raw_adc,(g_u8MstRxData[0]*3.3 - 0.5)*100);
 #endif
 	
-#if 1	
+#if 0	
 			printf("\nn");
 			/* ############## ADS1115_CONFIG_REGISTER_MUX_SINGLE_3	*/
 			 g_au8MstTxData[0] = 0x01;
