@@ -61,6 +61,7 @@ void RS485_9bitModeMaster(void);
 void SPI2_IRQHandler(void);
 void UART0_IRQHandler(void);
 void I2C_SlaveTRx(uint32_t u32Status);
+int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr);
 
 
 void TMR1_IRQHandler(void);

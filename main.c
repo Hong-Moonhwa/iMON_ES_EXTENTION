@@ -26,7 +26,7 @@
 /*---------------------------------------------------------------------------------------------------------*/
 /* Global variables                                                                                       */
 /*---------------------------------------------------------------------------------------------------------*/
-uint32_t LED1_R, LED1_G, LED1_B, Blink,brea=0,LED_cnt=0,brea_cnt=0;
+uint32_t LED1_R, LED1_G, LED1_B, Blink,brea=0,LED_cnt=0,brea_cnt=0, TMR0_cnt=0;
 
 /* Variables for DSP PID */
 arm_pid_instance_f32 PIDS;
@@ -112,6 +112,13 @@ static  uint8_t g_u8MstTimeoutFlag = 0;
 
 
 
+
+
+
+static  uint8_t g_testCount50_flag = 2;
+
+
+
 /*---------------------------------------------------------------------------------------------------------*/
 /*  I2C0 IRQ Handler                                                                                       */
 /*---------------------------------------------------------------------------------------------------------*/
@@ -135,7 +142,132 @@ void I2C0_IRQHandler(void)
     }
 }
 
+void TMR0_IRQHandler(void)
+{
+    if(TIMER_GetIntFlag(TIMER0) == 1)
+    {
+        /* Clear Timer0 capture trigger interrupt flag */
+        TIMER_ClearIntFlag(TIMER0);
+		TMR0_cnt++;
 
+
+		if(TMR0_cnt> 1000000 * 50)
+		{
+       		g_testCount50_flag=1;
+			if(TMR0_cnt> 1000000 * 60)
+			{
+       			g_testCount50_flag=2;
+				TMR0_cnt=0;
+				printf("Running Value time\n");
+			}
+			//printf("Clean Value time\n");
+		}
+
+		
+
+    }
+
+
+}
+
+
+void TMR1_IRQHandler(void)
+{
+	  uint32_t LED_duty,RLED,BLED,GLED,LED_brea;
+    if(TIMER_GetIntFlag(TIMER1) == 1) 
+	{
+        /* Clear Timer1 time-out interrupt flag */
+        TIMER_ClearIntFlag(TIMER1);
+        LED_cnt++;
+        LED_duty=LED_cnt%100;
+        if((brea==1)&&((brea_cnt%2)==0))
+            LED_brea=100-(LED_cnt/100);
+        else if(brea==1)
+            LED_brea=LED_cnt/100;
+        else
+            LED_brea=0;
+
+        RLED=((int32_t)(LED1_R-LED_duty-LED_brea)>0)?1:0;
+        BLED=((int32_t)(LED1_B-LED_duty-LED_brea)>0)?1:0;
+        GLED=((int32_t)(LED1_G-LED_duty-LED_brea)>0)?1:0;
+
+        if(LED_cnt>=(Blink*1000)) {
+            RLED=0;
+            BLED=0;
+            GLED=0;
+        }
+		//printf("LED[0x%2x][0x%2x][0x%2x]\n ", RLED, BLED, GLED);
+
+        
+        //PA->DOUT = (PA->DOUT|BIT0|BIT1|BIT2|BIT3)&(~((RLED<<0)|(GLED<<1)|(BLED<<2)|(BLED<<3)));
+        PA->DOUT = (PA->DOUT|BIT0|BIT1|BIT2|BIT3)&(~(RLED<<0));
+
+        if(LED_cnt==3000) {
+            LED_cnt=0;
+            brea_cnt++;
+        }
+			
+    }
+}
+
+
+void UART0_IRQHandler(void)
+{
+
+	int i,j,k;
+	UART_SetLine_Config(UART0, 0, UART_WORD_LEN_8, UART_PARITY_NONE, UART_STOP_BIT_1);
+	
+
+
+		/* Check RX EMPTY flag */
+		while(UART_GET_RX_EMPTY(UART0)==0)
+		{
+
+			/* Read RX FIFO */
+			g_fault_RecvData[g_u32_485RxDataCount++] = UART_READ(UART0);
+			g_485_flags=1;
+					
+		}
+
+
+}
+
+
+void SPI2_IRQHandler(void)
+{
+#if 0
+	/* Check RX EMPTY flag */
+	if(SPI_GET_RX_FIFO_EMPTY_FLAG(SPI2) == 0)
+	{
+		printf("SPI RECEIVE [0x%2x]\n ", SPI_READ_RX(SPI2)); /* Read RX FIFO */
+	}
+#endif
+#if 0
+
+    /* Check TX FULL flag and TX data count */
+    while((SPI_GET_TX_FIFO_FULL_FLAG(SPI0) == 0) && (g_u32TxDataCount < TEST_COUNT))
+    {
+        /* Write to TX FIFO */
+        SPI_WRITE_TX0(SPI0, g_au32SourceData[g_u32TxDataCount++]);
+    }
+    if(g_u32TxDataCount >= TEST_COUNT)
+        SPI_DisableInt(SPI0, SPI_FIFO_TX_INT_MASK); /* Disable TX FIFO threshold interrupt */
+    /* Check RX EMPTY flag */
+    while(SPI_GET_RX_FIFO_EMPTY_FLAG(SPI0) == 0)
+    {
+        /* Read RX FIFO */
+        g_au32DestinationData[g_u32RxDataCount++] = SPI_READ_RX0(SPI0);
+    }
+
+    /* Check the RX FIFO time-out interrupt flag */
+    if(SPI_GetIntFlag(SPI0, SPI_FIFO_TIMEOUT_INT_MASK))
+    {
+        /* If RX FIFO is not empty, read RX FIFO. */
+        while((SPI0->STATUS & SPI_STATUS_RX_EMPTY_Msk) == 0)
+            g_au32DestinationData[g_u32RxDataCount++] = SPI_READ_RX0(SPI0);
+    }
+#endif
+}
 
 int I2C_Reeceived_valid()
 {
@@ -210,6 +342,115 @@ void set_CRC16_faultfinder()
 	}
 
 }
+
+int I2C_Transmit_made_test()
+{
+	static uint8_t toggle_upcnt = 0,toggle_downcnt = 1, toggle_value = 1;
+	
+		 g_au8SlvData[0] = 0xff;
+		 g_au8SlvData[1] = get_PinValue();
+	     g_au8SlvData[2] = 0x00;
+		 g_au8SlvData[3] = 0x1e;	 
+
+		if(g_testCount50_flag==1)
+		{
+			 g_au8SlvData[4] = 0; /* STOP */
+			 g_au8SlvData[5] = 0;
+			 g_au8SlvData[6] = 0;
+
+
+
+		}
+		else if(g_testCount50_flag==2)
+		{
+			toggle_upcnt = ~toggle_upcnt & 0x01;
+			toggle_downcnt  = ~toggle_downcnt & 0x01;
+			 g_au8SlvData[4] = 1; /* RUN */
+			 g_au8SlvData[5] = toggle_upcnt;
+			 g_au8SlvData[6] = toggle_downcnt;
+
+	
+		}		 
+
+
+
+		if(g_testCount50_flag==1)
+		{
+			 g_au8SlvData[7] = 0x00;
+			 
+			 g_au8SlvData[8] = 0x00;
+			 g_au8SlvData[9] = 0x00;
+
+
+		}
+		else if(g_testCount50_flag==2)
+		{
+			 g_au8SlvData[7] = 0x01; /* Occurred Error */
+			 
+			 g_au8SlvData[8] = 0x00;
+			 g_au8SlvData[9] = toggle_value;
+
+			 toggle_value++;
+			 if(toggle_value==60)
+			 {
+			 	toggle_value =1;
+			 }
+
+		}			 
+
+
+
+		if(g_testCount50_flag==1)
+		{
+			 g_au8SlvData[10] = 0x1; /* Oil level Error : 0, Normal : 1 */
+			 g_testCount50_flag = 0;
+			 
+
+		}
+		else if(g_testCount50_flag==2)
+		{
+			 g_au8SlvData[10] = 0x0; /* Oil level Error : 0, Normal : 1 */
+			 g_testCount50_flag = 0;
+		}
+
+		 g_au8SlvData[11] = 0x00;   /* Tempeture */
+		 g_au8SlvData[12] = 0x5f; 
+		 
+		 g_au8SlvData[13] = 0x00;   /* Tempeture */
+		 g_au8SlvData[14] = 0x64;  
+		 
+		 g_au8SlvData[15] = 0x00;   /* Tempeture */		
+		 g_au8SlvData[16] = 0x5c; 
+		 
+		 g_au8SlvData[17] = 0x00;   /* Tempeture */
+		 g_au8SlvData[18] = 0x5b;  
+		 
+		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
+		 g_au8SlvData[20] = 0x0;
+		 
+		 g_au8SlvData[21] = 0x0;   /* Temp Tempeture */
+		 g_au8SlvData[22] = 0x0;
+		 
+		 g_au8SlvData[23] = 0x0;  /* Temp Tempeture */
+		 g_au8SlvData[24] = 0x0;
+		 
+		 g_au8SlvData[25] = 0x0;    /* Temp Tempeture */	
+		 g_au8SlvData[26] = 0x0;
+		 
+		 g_au8SlvData[27] = 0x00;  /* Reserved */
+		 g_au8SlvData[28] = 0x00;  /* Reserved */
+		 g_au8SlvData[29] = 0x00;  /* Reserved */
+		 g_au8SlvData[30] = 0x00;  /* Reserved */
+		 g_au8SlvData[31] = 0x00;  /* Reserved */
+		 
+		 g_au8SlvData[32] = 0x01; /* Board Major Version */
+		 g_au8SlvData[33] = 0x00; /* Board Minor Version */
+		 
+		 g_au8SlvData[34] = 0xf8;  /* EXT */
+		 
+		 
+}
+
 int I2C_Transmit_made()
 {
 	
@@ -217,10 +458,11 @@ int I2C_Transmit_made()
 		 g_au8SlvData[1] = get_PinValue();
 	     g_au8SlvData[2] = 0x00;
 		 g_au8SlvData[3] = 0x1e;	 
-		 g_au8SlvData[4] = 0x01;//g_fault_RecvData[4];
-	     g_au8SlvData[5] = 0x01;//g_fault_RecvData[6];
+		 g_au8SlvData[4] = g_fault_RecvData[4];
+	     g_au8SlvData[5] = g_fault_RecvData[6];
 		 g_au8SlvData[6] = g_fault_RecvData[8];
 	     g_au8SlvData[7] = g_fault_RecvData[12];
+
 
 		 g_au8SlvData[8] = 0x00;
 		 g_au8SlvData[9] = g_fault_RecvData[14];
@@ -742,7 +984,7 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
     } while(g_u8MstReStartFlag); /*If unexpected abort happens, re-start the transmition*/
 
     
-	printf("I2C Byte Read Data [0x%02x] [0x%02x]and count 0x%x\n", g_u8MstRxData[0], g_u8MstRxData[1], count_i);
+	//printf("I2C Byte Read Data [0x%02x] [0x%02x]and count 0x%x\n", g_u8MstRxData[0], g_u8MstRxData[1], count_i);
 
     
     return 0;
@@ -763,102 +1005,6 @@ void Delay(uint32_t delayCnt)
 }
 
 
-void UART0_IRQHandler(void)
-{
-
-	int i,j,k;
-	UART_SetLine_Config(UART0, 0, UART_WORD_LEN_8, UART_PARITY_NONE, UART_STOP_BIT_1);
-	
-
-
-		/* Check RX EMPTY flag */
-		while(UART_GET_RX_EMPTY(UART0)==0)
-		{
-
-			/* Read RX FIFO */
-			g_fault_RecvData[g_u32_485RxDataCount++] = UART_READ(UART0);
-			g_485_flags=1;
-					
-		}
-
-
-}
-
-
-void SPI2_IRQHandler(void)
-{
-#if 0
-	/* Check RX EMPTY flag */
-	if(SPI_GET_RX_FIFO_EMPTY_FLAG(SPI2) == 0)
-	{
-		printf("SPI RECEIVE [0x%2x]\n ", SPI_READ_RX(SPI2)); /* Read RX FIFO */
-	}
-#endif
-#if 0
-
-    /* Check TX FULL flag and TX data count */
-    while((SPI_GET_TX_FIFO_FULL_FLAG(SPI0) == 0) && (g_u32TxDataCount < TEST_COUNT))
-    {
-        /* Write to TX FIFO */
-        SPI_WRITE_TX0(SPI0, g_au32SourceData[g_u32TxDataCount++]);
-    }
-    if(g_u32TxDataCount >= TEST_COUNT)
-        SPI_DisableInt(SPI0, SPI_FIFO_TX_INT_MASK); /* Disable TX FIFO threshold interrupt */
-    /* Check RX EMPTY flag */
-    while(SPI_GET_RX_FIFO_EMPTY_FLAG(SPI0) == 0)
-    {
-        /* Read RX FIFO */
-        g_au32DestinationData[g_u32RxDataCount++] = SPI_READ_RX0(SPI0);
-    }
-
-    /* Check the RX FIFO time-out interrupt flag */
-    if(SPI_GetIntFlag(SPI0, SPI_FIFO_TIMEOUT_INT_MASK))
-    {
-        /* If RX FIFO is not empty, read RX FIFO. */
-        while((SPI0->STATUS & SPI_STATUS_RX_EMPTY_Msk) == 0)
-            g_au32DestinationData[g_u32RxDataCount++] = SPI_READ_RX0(SPI0);
-    }
-#endif
-}
-
-
-void TMR1_IRQHandler(void)
-{
-	  uint32_t LED_duty,RLED,BLED,GLED,LED_brea;
-    if(TIMER_GetIntFlag(TIMER1) == 1) {
-        /* Clear Timer1 time-out interrupt flag */
-        TIMER_ClearIntFlag(TIMER1);
-        LED_cnt++;
-        LED_duty=LED_cnt%100;
-        if((brea==1)&&((brea_cnt%2)==0))
-            LED_brea=100-(LED_cnt/100);
-        else if(brea==1)
-            LED_brea=LED_cnt/100;
-        else
-            LED_brea=0;
-
-        RLED=((int32_t)(LED1_R-LED_duty-LED_brea)>0)?1:0;
-        BLED=((int32_t)(LED1_B-LED_duty-LED_brea)>0)?1:0;
-        GLED=((int32_t)(LED1_G-LED_duty-LED_brea)>0)?1:0;
-
-        if(LED_cnt>=(Blink*1000)) {
-            RLED=0;
-            BLED=0;
-            GLED=0;
-        }
-		//printf("LED[0x%2x][0x%2x][0x%2x]\n ", RLED, BLED, GLED);
-
-        
-        //PA->DOUT = (PA->DOUT|BIT0|BIT1|BIT2|BIT3)&(~((RLED<<0)|(GLED<<1)|(BLED<<2)|(BLED<<3)));
-        PA->DOUT = (PA->DOUT|BIT0|BIT1|BIT2|BIT3)&(~(RLED<<0));
-
-        if(LED_cnt==3000) {
-            LED_cnt=0;
-            brea_cnt++;
-        }
-			
-    }
-}
 
 /*---------------------------------------------------------------------------------------------------------*/
 /*  RS485 Transmit Control  (Address Byte: Parity Bit =1 , Data Byte:Parity Bit =0)                        */
@@ -915,7 +1061,7 @@ uint8_t get_TemptureValue()
 			 ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	  /* 0x0003 (default) */ 
 
 	 int raw_adc=0;		 
-	for(i=0; i < 2 ; i++ )
+	for(i=0; i < 8 ; i++ )
 	{
 		
 		PA15= (i & 0x04 ) >> 2;/* S2 */
@@ -952,7 +1098,7 @@ uint8_t get_TemptureValue()
 #endif
 	
 #if 1
-			 printf("\nn");
+			// printf("\nn");
 
 			 /* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_0_3  */
 			 g_au8MstTxData[0] = 0x01;
@@ -965,9 +1111,10 @@ uint8_t get_TemptureValue()
 			   {
 				   raw_adc -= 65535;
 			   }
-			  printf("Digital Value 2 of Analog Input :[%d]  [%5.2f C]\n\n",	 raw_adc,(g_u8MstRxData[0]*3.3 - 0.5)*100);
+			  //printf("%d [%d]\n\n",	i, raw_adc);
+			   
 #endif
-	
+	//		Delay(3000000); //3000000 1 Sec
 #if 0
 			 printf("\nn");
 
@@ -1084,7 +1231,7 @@ uint8_t get_TemptureValue()
 
 uint8_t get_PinValue()
 {
-	uint8_t pin_array[8]={0x0,}, get_pin_value=0x0;
+	uint8_t pin_array[8]={0x0,},get_pin_value=0;
 
 
 	pin_array[7]= 0x80  & ((0x1  & ~PB0) << 7 );
@@ -1104,7 +1251,7 @@ uint8_t get_PinValue()
 					pin_array[2] | \
 					pin_array[1] | \
 					pin_array[0];
-	printf("\nDIP SWITCH Value [0x%x]\n\n",get_pin_value);//->PIN << 7);
+
 
 	return get_pin_value;
 
@@ -1203,15 +1350,16 @@ int main(void)
 	   printf("SLAVE Address Mask test OK.\n");
 
 
-	get_TemptureValue();
+//	get_TemptureValue();
 
 
 
-    RS485_SendDataByte(g_fault_finderData, 8);
+//    RS485_SendDataByte(g_fault_finderData, 8);
 
 
     while(1)
     {
+    	RS485_SendDataByte(g_fault_finderData, 8);
     	local_count++;
     	if(g_485_flags && g_u32_485RxDataCount == 16)
 		{
@@ -1224,7 +1372,7 @@ int main(void)
 			printf("\n ");
 			g_485_flags = 0 ;
 			g_u32_485RxDataCount=0;
-			I2C_Transmit_made();
+			//I2C_Transmit_made_test();
 		}
 
         /* Handle Slave timeout condition */
@@ -1266,19 +1414,23 @@ int main(void)
 #endif
 
 #if 1	
-		if(local_count>600000)
-		{
+		//if(local_count>600000 1000000)
+	//	{
 	//		get_TemptureValue();
-			local_count=0;
-		}
+		//	local_count=0;
+	//	}
 
 #endif
+		
+
+		Delay(1000000); //3000000 1 Sec
+		//get_TemptureValue();
+   		I2C_Transmit_made_test();
 
  
    }
    
-	Delay(1000000000);
-
+	
 
 }
 
@@ -1431,7 +1583,7 @@ void SYS_Init(void)
 	GPIO_SetMode(PA, BIT14, GPIO_MODE_OUTPUT); 	// S1
 	GPIO_SetMode(PA, BIT15, GPIO_MODE_OUTPUT);  // S2s
 
-	
+	printf("\nDIP SWITCH Value [0x%x]\n\n",get_PinValue());//->PIN << 7);
 }
 void Timer_Init(void)
 {
@@ -1457,28 +1609,19 @@ void Timer_Init(void)
 	  TIMER_Close(TIMER0);
 	  CalTime = TIMER_GetCounter(TIMER0);
 	  printf("\nDSP PID: It took %d HXT clocks\n", CalTime);
-	
-	  /********************** Software PID ****************************/
-	  /* Re-Initialization TIMER0 for performance comparing */
-	  TIMER_Open(TIMER0, TIMER_CONTINUOUS_MODE, 1);
-	
+	  printf("\n\nCPU @ %dHz\n", SystemCoreClock);	
+
+
+	  /* Enable peripheral clock */
+	  CLK_EnableModuleClock(TMR0_MODULE);
+	  CLK_SetModuleClock(TMR0_MODULE, CLK_CLKSEL1_TMR0SEL_HIRC, 0);	
+      /* Open Timer0 in periodic mode, enable interrupt and 1 interrupt tick per second */
+	  TIMER_Open(TIMER0, TIMER_PERIODIC_MODE, 1000000);  
+      TIMER_EnableInt(TIMER0);
+      /* Enable Timer0 ~ Timer3 NVIC */
+      NVIC_EnableIRQ(TMR0_IRQn);
 	  TIMER_Start(TIMER0);
-	
-	  /* Calculate PID controller function 100 times*/
-	  for(i = 1; i < 100; i++)
-	  {
-		  output[i] = PID(ee);
-		  ee = target-output[i-1];
-	  }
-	
-	  TIMER_Close(TIMER0);
-	  CalTime = TIMER_GetCounter(TIMER0);
-	  printf("Software PID: It took %d HXT clocks\n", CalTime);
-	  printf("\n\nCPU @ %dHz\n", SystemCoreClock);
-	  
-	  
-		
-	
+
 	
 	  /* Enable peripheral clock */
 	  CLK_EnableModuleClock(TMR1_MODULE);
