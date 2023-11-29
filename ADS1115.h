@@ -53,7 +53,11 @@
 void SYS_Init(void);
 void SPI_Init(void);
 void UART_Init(void);
-void I2C_Init(void);
+void I2C0_Init(void);
+
+void I2C1_Init(void);
+
+
 void Timer_Init(void);
 void RS485_SendAddressByte(uint8_t u8data);
 void RS485_SendDataByte(uint8_t *pu8TxBuf, uint32_t u32WriteBytes);
