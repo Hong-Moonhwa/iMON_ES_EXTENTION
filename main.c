@@ -26,7 +26,7 @@
 /*---------------------------------------------------------------------------------------------------------*/
 /* Global variables                                                                                       */
 /*---------------------------------------------------------------------------------------------------------*/
-uint32_t LED1_R, LED1_G, LED1_B, Blink,brea=0,LED_cnt=0,brea_cnt=0, TMR0_cnt=0;
+uint32_t LED1_R, LED1_G, LED1_B, Blink,brea=0,LED_cnt=0,brea_cnt=0, TMR0_cnt=0, TEMP_Cnt=0, TEMP_save=0;
 
 /* Variables for DSP PID */
 arm_pid_instance_f32 PIDS;
@@ -116,7 +116,7 @@ static  uint8_t g_u8MstTimeoutFlag = 0;
 
 
 static  uint8_t g_testCount50_flag = 2;
-
+static uint8_t g_tempture_value[8]={0,};
 
 
 /*---------------------------------------------------------------------------------------------------------*/
@@ -149,6 +149,7 @@ void TMR0_IRQHandler(void)
         /* Clear Timer0 capture trigger interrupt flag */
         TIMER_ClearIntFlag(TIMER0);
 		TMR0_cnt++;
+		TEMP_Cnt = TMR0_cnt;
 
 
 		if(TMR0_cnt> 1000000 * 50)
@@ -342,9 +343,10 @@ void set_CRC16_faultfinder()
 
 }
 
+#define EXTEN_BD_TYPE 0x01
 int I2C_Transmit_made_test()
 {
-	static uint8_t toggle_upcnt = 0,toggle_downcnt = 1, toggle_value = 1;
+	static uint8_t toggle_upcnt = 0,toggle_downcnt = 1, toggle_value = 1, err_flag =0;
 	
 		 g_au8SlvData[0] = 0xff;
 		 g_au8SlvData[1] = get_PinValue();
@@ -373,29 +375,36 @@ int I2C_Transmit_made_test()
 
 
 
-		if(g_testCount50_flag==1)
+
+
+		if((0x1  & ~PB0) == 1)
+		{
+		
+			g_au8SlvData[7] = 0x01; /* Occurred Error */
+			
+			g_au8SlvData[8] = 0x00;
+			g_au8SlvData[9] = toggle_value;
+			
+
+			err_flag = 1 ;
+			printf("Occurred Error\n");
+		}
+		else
 		{
 			 g_au8SlvData[7] = 0x00;
-			 
 			 g_au8SlvData[8] = 0x00;
 			 g_au8SlvData[9] = 0x00;
 
-
-		}
-		else if(g_testCount50_flag==2)
-		{
-			 g_au8SlvData[7] = 0x01; /* Occurred Error */
-			 
-			 g_au8SlvData[8] = 0x00;
-			 g_au8SlvData[9] = toggle_value;
-
-			 toggle_value++;
-			 if(toggle_value==60)
+			 if(err_flag == 1)
 			 {
-			 	toggle_value =1;
+			 	toggle_value++;
+				if(toggle_value==60)
+				{
+				   toggle_value =1;
+				}
+				err_flag = 0;
 			 }
-
-		}			 
+		}
 
 
 
@@ -413,16 +422,16 @@ int I2C_Transmit_made_test()
 		}
 
 		 g_au8SlvData[11] = 0x00;   /* Tempeture */
-		 g_au8SlvData[12] = 0x5f; 
+		 g_au8SlvData[12] = g_tempture_value[0]; 
 		 
 		 g_au8SlvData[13] = 0x00;   /* Tempeture */
-		 g_au8SlvData[14] = 0x64;  
+		 g_au8SlvData[14] = g_tempture_value[0]+75;   
 		 
 		 g_au8SlvData[15] = 0x00;   /* Tempeture */		
-		 g_au8SlvData[16] = 0x5c; 
+		 g_au8SlvData[16] = g_tempture_value[0]+85; 
 		 
 		 g_au8SlvData[17] = 0x00;   /* Tempeture */
-		 g_au8SlvData[18] = 0x5b;  
+		 g_au8SlvData[18] = g_tempture_value[0]+80;   
 		 
 		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
 		 g_au8SlvData[20] = 0x0;
@@ -440,7 +449,7 @@ int I2C_Transmit_made_test()
 		 g_au8SlvData[28] = 0x00;  /* Reserved */
 		 g_au8SlvData[29] = 0x00;  /* Reserved */
 		 g_au8SlvData[30] = 0x00;  /* Reserved */
-		 g_au8SlvData[31] = 0x00;  /* Reserved */
+		 g_au8SlvData[31] = EXTEN_BD_TYPE;  /* Extend Board Type */
 		 
 		 g_au8SlvData[32] = 0x01; /* Board Major Version */
 		 g_au8SlvData[33] = 0x00; /* Board Minor Version */
@@ -576,7 +585,7 @@ void I2C_SlaveTRx(uint32_t u32Status)
     {
 
         I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
-		printf("iMON Send OK\n ");
+		printf("iMON Send OK\n");
 		
     }
     else if(u32Status == 0x88)                 /* Previously addressed with own SLA address; NOT ACK has
@@ -944,7 +953,7 @@ void I2C1_Init(void)
 {
 
     /* Open I2C module and set bus clock */
-	I2C_Open(I2C1,100000); /* Tempeture */
+	I2C_Open(I2C1,400000); /* Tempeture */
 
     /* Get I2C0 Bus Clock */
 
@@ -1114,13 +1123,14 @@ void I2C_MasterRx(uint32_t u32Status)
 void I2C_MasterTx(uint32_t u32Status)
 {
 
-	//printf("\nI2C  I2C_MasterTx Status 0x%x\n", u32Status);
+//	printf("\nI2C  I2C_MasterTx Status 0x%x\n", u32Status);
     uint32_t u32TimeOutCnt;
 
     if(u32Status == 0x08)                       /* START has been transmitted */
     {
         I2C_SET_DATA(I2C1, g_u8MstDeviceAddr << 1);    /* Write SLA+W to Register I2CDAT */
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+        
     }
     else if(u32Status == 0x18)                  /* SLA+W has been transmitted and ACK has been received */
     {
@@ -1130,12 +1140,13 @@ void I2C_MasterTx(uint32_t u32Status)
     }
     else if(u32Status == 0x20)                  /* SLA+W has been transmitted and NACK has been received */
     {
-        I2C_STOP(I2C1);
-        I2C_START(I2C1);
+        I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
+        //I2C_STOP(I2C1);
+        //I2C_START(I2C1);
     }
     else if(u32Status == 0x28)                  /* DATA has been transmitted and ACK has been received */
     {
-        if(g_u8MstDataLen != 2)
+        if(g_u8MstDataLen != 3)
         {
           //   	printf("TX DATA[%x] : 0x%x\n",g_u8MstDataLen,g_au8MstTxData[g_u8MstDataLen]);
             I2C_SET_DATA(I2C1, g_au8MstTxData[g_u8MstDataLen++]);
@@ -1143,18 +1154,24 @@ void I2C_MasterTx(uint32_t u32Status)
         }
 	    else
         {
-            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+//            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
             g_u8MstEndFlag = 1;
         }
     }
+	else if(u32Status == 0x30)   
+	{
+	          I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
+	}
     else
     {    /* Error condition process */
         printf("[MasterTx] Status [0x%x] Unexpected abort!! Anykey to re-start\n", u32Status);
 
         if(u32Status == 0x38)                   /* Master arbitration lost, stop I2C and clear SI */
         {
-            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
-            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+             I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STA);
+            //I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
+            //I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
         }
         else if(u32Status == 0x00)              /* Master bus error, stop I2C and clear SI */
         {
@@ -1186,7 +1203,7 @@ void I2C_MasterTx(uint32_t u32Status)
     
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
 
-		u32TimeOutCnt = 1000000;//I2C_TIMEOUT;
+		u32TimeOutCnt = 3000000;//I2C_TIMEOUT 3000000 1sec
         while(I2C1->CTL & I2C_CTL_SI_Msk)
         {
             if(--u32TimeOutCnt == 0)
@@ -1202,6 +1219,7 @@ void I2C_MasterTx(uint32_t u32Status)
 int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
 {
     uint32_t i;
+	uint8_t nResut =0;
 
 
     do
@@ -1232,12 +1250,12 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
                 if(g_u8MstTimeoutFlag)
                 {
                     printf(" MasterTx time out, any to reset IP\n");
-//                    getchar();
                     SYS->IPRST1 |= SYS_IPRST1_I2C1RST_Msk;
                     SYS->IPRST1 = 0;
                     I2C1_Init();
                     /* Set MasterTx abort flag */
                     g_u8MstTxAbortFlag = 1;
+					nResut = 1;
                 }
             } while(g_u8MstEndFlag == 0 && g_u8MstTxAbortFlag == 0);
 
@@ -1266,12 +1284,12 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
                 {
                     /* When I2C timeout, reset IP */
                     printf(" MasterRx time out, any to reset IP\n");
-//                    getchar();
                     SYS->IPRST1 |= SYS_IPRST1_I2C1RST_Msk;
                     SYS->IPRST1 = 0;
                     I2C1_Init();
                     /* Set MasterRx abort flag */
                     g_u8MstRxAbortFlag = 1;
+					nResut = 1;
                 }
             } while(g_u8MstEndFlag == 0 && g_u8MstRxAbortFlag == 0);
 
@@ -1289,10 +1307,10 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
     } while(g_u8MstReStartFlag); /*If unexpected abort happens, re-start the transmition*/
 
     
-	//printf("I2C Byte Read Data [0x%02x] [0x%02x]and count 0x%x\n", g_u8MstRxData[0], g_u8MstRxData[1], count_i);
+//	printf("I2C Byte Read Data [0x%02x] [0x%02x]and count 0x%x\n", g_u8MstRxData[0], g_u8MstRxData[1], count_i);
 
     
-    return 0;
+    return nResut;
 }
 
 
@@ -1342,6 +1360,11 @@ void RS485_ReadDataByte(uint8_t *puRTxBuf, uint32_t u32ReadBytes)
 
 uint8_t get_TemptureValue()
 {
+	static uint8_t iner_temp_cnt = 0,k =0, printf_flag=0;
+	static uint16_t temp[8], adc_array[8][20]={0x0,};	
+	static uint32_t raw_adc[8] = {0x0,};
+	uint8_t i;
+
 	/*
 		
 	ADS1115_CONFIG_REGISTER_MUX_DIFF_0_1	//(default)
@@ -1355,131 +1378,127 @@ uint8_t get_TemptureValue()
 
 	*/
 
-	uint8_t bit_array[3]={0x0,},i;
-   uint16_t setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE  | /* 0x8000 ADS1115_CONFIG_REGISTER_OS_NO_EFFECT or ADS1115_CONFIG_REGISTER_OS_SINGLE */
-			 ADS1115_CONFIG_REGISTER_PGA_2_048	  | 		 /* 0x0400 (default) */
-			 ADS1115_CONFIG_REGISTER_MODE_SINGLE  | 		 /* 0x0100 (default) ADS1115_CONFIG_REGISTER_MODE_CONTINUE or ADS1115_CONFIG_REGISTER_MODE_SINGLE */  
-			 ADS1115_CONFIG_REGISTER_DR_128_SPS   | 		 /* 0x0080 (default) */  
+
+   uint16_t setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE  | /* 0x8000  ADS1115_CONFIG_REGISTER_OS_SINGLE */
+			 ADS1115_CONFIG_REGISTER_PGA_2_048	  | 		 /* 0x0400 (default) ADS1115_CONFIG_REGISTER_PGA_2_048 */
+			 ADS1115_CONFIG_REGISTER_MODE_CONTINUE  | 		 /* 0x0100 (default)  ADS1115_CONFIG_REGISTER_MODE_SINGLE */  
+			 ADS1115_CONFIG_REGISTER_DR_128_SPS   | 		 /* 0x0080 (default) ADS1115_CONFIG_REGISTER_DR_128_SPS */  
 			 ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR	|/* 0x0000 (default) */ 	 
 			 ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_HIGH or ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW */ 
-			 ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		 |/* 0x0000 (default) */ 
-			 ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	  /* 0x0003 (default) */ 
+			 ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		 |/* 0x0000 (default) ADS1115_CONFIG_REGISTER_COMP_LAT_NONE */ 
+			 ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	  /* 0x0003 (default) ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE */ 
 
-	 int raw_adc=0;		 
-	for(i=0; i < 4 ; i++ )
-	{
-		
-		PA15= (i & 0x04 ) >> 2;/* S2 */
-		PA14= (i  & 0x02) >> 1;/* S1 */
-		PA13= i	& 0x1; /* S0 */
-		bit_array[2]=PA15;
-		bit_array[1]=PA14;
-		bit_array[0]=PA13;
+	 temp[iner_temp_cnt]=0;
+	 raw_adc[iner_temp_cnt]=0;
 
-		//printf("DIP [%x] Tempture Bit Value  Bit[%x],[%x],[%x]\n", \
-																	i, \
-																	bit_array[2], \
-																	bit_array[1], \
-																	bit_array[0]);//->PIN << 7);
+	PA15= (iner_temp_cnt & 0x04 ) >> 2;/* S2 */
+	PA14= (iner_temp_cnt  & 0x02) >> 1;/* S1 */
+	PA13= iner_temp_cnt	& 0x1; /* S0 */
+
+
 	
+	 if(k >= 15)
+	 {
+		 k = 0;
+	 }
 
 
-#if 0
+	PA12 = 0;
 
 
-			 /* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_0_3  */
-			   g_au8MstTxData[0] = 0x01;
-			   g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_0_1)  >> 8) & 0xFF ; /* Reset 0x06 */
-			   g_au8MstTxData[2] = setup_data & 0x00FF;
-			 I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
-					  //printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
-				   raw_adc = ((g_u8MstRxData[0] & 0xFF) * 256 + (g_u8MstRxData[1] & 0xFF));
-				 if (raw_adc > 32767)
-				 {
-					 raw_adc -= 65535;
-				 }
-				printf("%d [%d]\n",   i, raw_adc);
-			  Delay(3000000); //3000000 1 Sec 
 
-#endif
-	
-#if 0
-			 /* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_0_3  */
-			 g_au8MstTxData[0] = 0x01;
-			 g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_0_3)  >> 8) & 0xFF ; /* Reset 0x06 */
-			 g_au8MstTxData[2] = setup_data & 0x00FF;
-		   I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
-					//printf("\n######################RX  RX  RX   DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
-				 raw_adc = ((g_u8MstRxData[0] & 0xFF) * 256 + (g_u8MstRxData[1] & 0xFF));
-			   if (raw_adc > 32767)
-			   {
-				   raw_adc -= 65535;
-			   }
-			  printf("%d [%d]\n",	i, raw_adc);
-  			Delay(3000000); //3000000 1 Sec 
-			   
-#endif
 
-#if 0
-/* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_0_3  */
-			   g_au8MstTxData[0] = 0x01;
-			   g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
-			   g_au8MstTxData[2] = setup_data & 0x00FF;
-			 I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
-					  //printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
-				   raw_adc = ((g_u8MstRxData[0] & 0xFF) * 256 + (g_u8MstRxData[1] & 0xFF));
-				 if (raw_adc > 32767)
-				 {
-					 raw_adc -= 65535;
-				 }
-				printf("%d [%d]\n",   i, raw_adc);
-			  Delay(3000000); //3000000 1 Sec 
+			/* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3  */
 
-#endif
-	
-#if 1
-
-			/* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_0_3  */
 			g_au8MstTxData[0] = 0x01;
-			g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_2_3)  >> 8) & 0xFF ; /* Reset 0x06 */
+			g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
 			g_au8MstTxData[2] = setup_data & 0x00FF;
-			I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
-			 //printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
-			raw_adc = ((g_u8MstRxData[0] & 0xFF) * 256 + (g_u8MstRxData[1] & 0xFF));
-			if (raw_adc > 32767)
+
+			if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
 			{
-				raw_adc -= 65535;
+			 	//printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
+			 	temp[iner_temp_cnt] = ((g_u8MstRxData[0] & 0xFF) * 256 + (g_u8MstRxData[1] & 0xFF));
+		
+
+				if (temp[iner_temp_cnt] > 32767)
+			 	{
+					temp[iner_temp_cnt] -= 65535;
+				 }
+			
+
+			 	 adc_array[iner_temp_cnt][k]= temp[iner_temp_cnt];
+
 			}
-			printf("%d [%d]\n",   i, raw_adc);
-	//		  Delay(3000000); //3000000 1 Sec 
+			else
+			{
+				//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
+			}
 
 
 
 
-#endif
+	for( i=0 ; i < 15 ;i++)
+	{
+		 raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] + adc_array[iner_temp_cnt][i];
+		// printf("DATA %d [%d]\n",i, adc_array[iner_temp_cnt][i]);
+	}
+	//printf("DATA  [%d]\n",raw_adc[iner_temp_cnt]);
+	 raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] / 15 ;
 	
-	
-#if 0
-			 printf("\nn");
+	if(k== (15 - 1) )
+	 {
+		 printf_flag = 1;
+	 }	 
+		
+	if(printf_flag==1)
+	 {
+		
+		
+		 if(raw_adc[iner_temp_cnt] >= 14216)
+		 {
+		 	g_tempture_value[iner_temp_cnt] = (( raw_adc[iner_temp_cnt] - 10000 ) * 0.0158) /1 ;
+		 }
+		 else if(raw_adc[iner_temp_cnt] < 14216 &&  raw_adc[iner_temp_cnt] >= 13985)
+		 {
+		 	g_tempture_value[iner_temp_cnt] = (( raw_adc[iner_temp_cnt] - 10000 ) * 0.0112) /1 ;
+		 	
+		 }else if(raw_adc[iner_temp_cnt] < 13985)
+		 {
+		 	g_tempture_value[iner_temp_cnt] = (( raw_adc[iner_temp_cnt] - 10000 ) * 0.0062) /1 ;
+		 }
+		 else
+		 {
+		 	g_tempture_value[iner_temp_cnt] =0;
+		 
+		 }
 
-			 /* ############## ADS1115_CONFIG_REGISTER_MUX_SINGLE_0  */
-			 g_au8MstTxData[0] = 0x01;
-			 g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_SINGLE_0)  >> 8) & 0xFF ; /* Reset 0x06 */
-			 g_au8MstTxData[2] = setup_data & 0x00FF;
-			I2C1_Read_Write_SLAVE(ADS1115_ADDRESS);
-					 //printf("\n######################RX  RX  RX	DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
-				 raw_adc = ((g_u8MstRxData[0] & 0xFF) * 256 + (g_u8MstRxData[1] & 0xFF));
-				if (raw_adc > 32767)
-				{
-					raw_adc -= 65535;
-				}
-				printf("Digital Value 5 of Analog Input :[%d]  [%5.2f C]\n\n",	 raw_adc,(g_u8MstRxData[0]*3.3 - 0.5)*100);
-#endif
+		 if(g_tempture_value[iner_temp_cnt] >200)
+		 {
+			 g_tempture_value[iner_temp_cnt] = 200;
+		 }
+		 else if(g_tempture_value[iner_temp_cnt] < 0)
+		 {
+			 g_tempture_value[iner_temp_cnt] = 0;
+		 }	
+	     printf("At %d [%d] Real [%d] C\n", iner_temp_cnt+1,  raw_adc[iner_temp_cnt], g_tempture_value[iner_temp_cnt]);
+	 }
 	
-	
-	
+	k++;
+
+
+
+	if(iner_temp_cnt >=0)
+	{
+		//printf("\n\n");
+		iner_temp_cnt = 0;
 
 	}
+	else
+	{
+		iner_temp_cnt++;
+	}
+	PA12 = 1;
+
 
 	return 0;
 
@@ -1588,10 +1607,8 @@ int main(void)
 
 	  
 
-//	get_TemptureValue();
 
-
-  
+  	TEMP_save =	 TEMP_Cnt / 1000000 ;
 
 
     while(1)
@@ -1607,7 +1624,7 @@ int main(void)
 
 		{
 
-			printf("485 Received\n ");
+			printf("485 Received\n");
 #if 0
 
 			for(i=0;i<g_u32_485RxDataCount;i++)
@@ -1686,7 +1703,12 @@ int main(void)
 		
 
 		Delay(1000000); //3000000 1 Sec
-		//get_TemptureValue();
+
+		if(TEMP_save != TEMP_Cnt / 300000)
+		{
+			TEMP_save = TEMP_Cnt / 300000;
+			get_TemptureValue();
+		}
    		I2C_Transmit_made_test();
 
  
