@@ -820,7 +820,7 @@ void SYS_Init(void)
 	GPIO_SetMode(PA, BIT14, GPIO_MODE_OUTPUT); 	// S1
 	GPIO_SetMode(PA, BIT15, GPIO_MODE_OUTPUT);  // S2s
 
-	PA12 = 0;/* EN */
+	PA12 = 1;/* EN */
 
 
 	
@@ -1379,9 +1379,10 @@ uint8_t get_TemptureValue()
 	*/
 
 
+
    uint16_t setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE  | /* 0x8000  ADS1115_CONFIG_REGISTER_OS_SINGLE */
 			 ADS1115_CONFIG_REGISTER_PGA_2_048	  | 		 /* 0x0400 (default) ADS1115_CONFIG_REGISTER_PGA_2_048 */
-			 ADS1115_CONFIG_REGISTER_MODE_CONTINUE  | 		 /* 0x0100 (default)  ADS1115_CONFIG_REGISTER_MODE_SINGLE */  
+			 ADS1115_CONFIG_REGISTER_MODE_SINGLE  | 		 /* 0x0100 (default)  ADS1115_CONFIG_REGISTER_MODE_SINGLE */  
 			 ADS1115_CONFIG_REGISTER_DR_128_SPS   | 		 /* 0x0080 (default) ADS1115_CONFIG_REGISTER_DR_128_SPS */  
 			 ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR	|/* 0x0000 (default) */ 	 
 			 ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_HIGH or ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW */ 
@@ -1395,6 +1396,7 @@ uint8_t get_TemptureValue()
 	PA14= (iner_temp_cnt  & 0x02) >> 1;/* S1 */
 	PA13= iner_temp_cnt	& 0x1; /* S0 */
 
+	 PA12 = 0;
 
 	
 	 if(k >= 15)
@@ -1403,12 +1405,7 @@ uint8_t get_TemptureValue()
 	 }
 
 
-	PA12 = 0;
-
-
-
-
-			/* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3  */
+				/* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3  */
 
 			g_au8MstTxData[0] = 0x01;
 			g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
@@ -1462,10 +1459,22 @@ uint8_t get_TemptureValue()
 		 {
 		 	g_tempture_value[iner_temp_cnt] = (( raw_adc[iner_temp_cnt] - 10000 ) * 0.0112) /1 ;
 		 	
-		 }else if(raw_adc[iner_temp_cnt] < 13985)
+		 }
+		 else if(raw_adc[iner_temp_cnt] < 13985 &&  raw_adc[iner_temp_cnt] >= 13840)
+		 {
+		 	g_tempture_value[iner_temp_cnt] = (( raw_adc[iner_temp_cnt] - 10000 ) * 0.00937) /1 ;
+		 	
+		  }
+		 else if(raw_adc[iner_temp_cnt] < 13840 &&  raw_adc[iner_temp_cnt] >= 13755)
 		 {
 		 	g_tempture_value[iner_temp_cnt] = (( raw_adc[iner_temp_cnt] - 10000 ) * 0.0062) /1 ;
-		 }
+		 	
+		  }	
+		 else if(raw_adc[iner_temp_cnt] < 13755 )
+		 {
+		 	g_tempture_value[iner_temp_cnt] = (( raw_adc[iner_temp_cnt] - 10000 ) * 0.005) /1 ;
+		 	
+		  }		 
 		 else
 		 {
 		 	g_tempture_value[iner_temp_cnt] =0;
