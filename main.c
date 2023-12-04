@@ -902,12 +902,14 @@ void SYS_Init(void)
 
 
 
-	GPIO_SetMode(PA, BIT12, GPIO_MODE_OUTPUT);  // PT100_EN
-	GPIO_SetMode(PA, BIT13, GPIO_MODE_OUTPUT); 	// S0
-	GPIO_SetMode(PA, BIT14, GPIO_MODE_OUTPUT); 	// S1
-	GPIO_SetMode(PA, BIT15, GPIO_MODE_OUTPUT);  // S2s
-
+	GPIO_SetMode(PA, BIT12, GPIO_MODE_OUTPUT );  // PT100_EN
+	GPIO_SetMode(PA, BIT13, GPIO_MODE_OUTPUT ); 	// S0
+	GPIO_SetMode(PA, BIT14, GPIO_MODE_OUTPUT ); 	// S1
+	GPIO_SetMode(PA, BIT15, GPIO_MODE_OUTPUT );  // S2 GPIO_MODE_QUASI GPIO_MODE_OPEN_DRAIN GPIO_MODE_OUTPUT
 	PA12 = 1;/* EN */
+	PA13 = 0;
+	PA14 = 0;
+	PA15 = 0;
 
 
 	
@@ -1476,20 +1478,22 @@ uint8_t get_TemptureValue()
 			 ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		 |/* 0x0000 (default) ADS1115_CONFIG_REGISTER_COMP_LAT_NONE */ 
 			 ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	  /* 0x0003 (default) ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE */ 
 
-	 temp[iner_temp_cnt]=0;
-	 raw_adc[iner_temp_cnt]=0;
+	temp[iner_temp_cnt]=0;
+	raw_adc[iner_temp_cnt]=0;
 
 	PA15= (iner_temp_cnt & 0x04 ) >> 2;/* S2 */
 	PA14= (iner_temp_cnt  & 0x02) >> 1;/* S1 */
 	PA13= iner_temp_cnt	& 0x1; /* S0 */
 
-	 PA12 = 0;
+	PA12 = 0;
+
 
 	
 	 if(k >= 15)
 	 {
 		 k = 0;
 	 }
+
 
 
 				/* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3  */
@@ -1517,6 +1521,7 @@ uint8_t get_TemptureValue()
 			{
 				//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
 			}
+
 
 
 
@@ -1575,11 +1580,12 @@ uint8_t get_TemptureValue()
 	
 	k++;
 
+	PA12 = 1;
 
 
-	if(iner_temp_cnt >=0)
+	if(iner_temp_cnt >=1)
 	{
-		//printf("\n\n");
+		printf("\n\n");
 		iner_temp_cnt = 0;
 
 	}
@@ -1587,7 +1593,7 @@ uint8_t get_TemptureValue()
 	{
 		iner_temp_cnt++;
 	}
-	PA12 = 1;
+
 
 
 	return 0;
