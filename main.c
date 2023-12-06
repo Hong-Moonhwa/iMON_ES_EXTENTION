@@ -288,7 +288,9 @@ void TMR1_IRQHandler(void)
 
         
         //PA->DOUT = (PA->DOUT|BIT0|BIT1|BIT2|BIT3)&(~((RLED<<0)|(GLED<<1)|(BLED<<2)|(BLED<<3)));
-        PA->DOUT = (PA->DOUT|BIT0|BIT1|BIT2|BIT3)&(~(RLED<<0));
+       // PA->DOUT = (PA->DOUT|BIT0|BIT1|BIT2|BIT3)&(~(RLED<<0));
+		PA->DOUT = (PA->DOUT|BIT0)&(~(RLED<<0));
+
 
         if(LED_cnt==3000) {
             LED_cnt=0;
@@ -565,35 +567,35 @@ int I2C_Transmit_made()
 		 g_au8SlvData[10] = 0x1;
 
 		 
-		 g_au8SlvData[11] = 0x11;   /* Tempeture */
-		 g_au8SlvData[12] = 0x22; 
+		 g_au8SlvData[11] = 0x00;   /* Tempeture */
+		 g_au8SlvData[12] = g_tempture_value[0]; 
 		 
-		 g_au8SlvData[13] = 0x12;   /* Tempeture */
-		 g_au8SlvData[14] = 0x34;  
+		 g_au8SlvData[13] = 0x00;   /* Tempeture */
+		 g_au8SlvData[14] = g_tempture_value[1];   
 		 
-		 g_au8SlvData[15] = 0x56;   /* Tempeture */		
-		 g_au8SlvData[16] = 0x78; 
+		 g_au8SlvData[15] = 0x00;   /* Tempeture */		
+		 g_au8SlvData[16] = g_tempture_value[2]; 
 		 
-		 g_au8SlvData[17] = 0x9a;   /* Tempeture */
-		 g_au8SlvData[18] = 0xbc;  
+		 g_au8SlvData[17] = 0x00;   /* Tempeture */
+		 g_au8SlvData[18] = g_tempture_value[3];   
 		 
 		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
-		 g_au8SlvData[20] = 0x0;
+		 g_au8SlvData[20] = g_tempture_value[4];
 		 
 		 g_au8SlvData[21] = 0x0;   /* Temp Tempeture */
-		 g_au8SlvData[22] = 0x0;
+		 g_au8SlvData[22] = g_tempture_value[5];
 		 
 		 g_au8SlvData[23] = 0x0;  /* Temp Tempeture */
-		 g_au8SlvData[24] = 0x0;
+		 g_au8SlvData[24] = g_tempture_value[6];
 		 
 		 g_au8SlvData[25] = 0x0;    /* Temp Tempeture */	
-		 g_au8SlvData[26] = 0x0;
+		 g_au8SlvData[26] = g_tempture_value[7];
 		 
 		 g_au8SlvData[27] = 0x00;  /* Reserved */
 		 g_au8SlvData[28] = 0x00;  /* Reserved */
 		 g_au8SlvData[29] = 0x00;  /* Reserved */
 		 g_au8SlvData[30] = 0x00;  /* Reserved */
-		 g_au8SlvData[31] = 0x00;  /* Reserved */
+		 g_au8SlvData[31] = EXTEN_BD_TYPE;  /* Extend Board Type */
 		 
 		 g_au8SlvData[32] = 0x01; /* Board Major Version */
 		 g_au8SlvData[33] = 0x00; /* Board Minor Version */
@@ -659,6 +661,7 @@ void I2C_SlaveTRx(uint32_t u32Status)
 		{
     	       	I2C_SET_DATA(I2C0, g_au8SlvData[g_au8SlvCounter]);
     		    I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
+		     //	printf("\niMON I2C0 Sending Data 0x%02x\n",g_au8SlvData[g_au8SlvCounter]);
 				g_au8SlvCounter++;
 	    }
 		else
@@ -840,7 +843,7 @@ void SYS_Init(void)
 	//SYS->GPC_MFPL &= ~(SYS_GPC_MFPL_PC7MFP_Msk );
 	//SYS->GPC_MFPL |= (SYS_GPC_MFPL_PC7MFP_I2C1_SMBSUS );
     /* I2C pins enable schmitt trigger */
-    PA->SMTEN |= (GPIO_SMTEN_SMTEN2_Msk | GPIO_SMTEN_SMTEN3_Msk);///???
+    //PA->SMTEN |= (GPIO_SMTEN_SMTEN2_Msk | GPIO_SMTEN_SMTEN3_Msk);///???
 
 
 
@@ -874,9 +877,9 @@ void SYS_Init(void)
 
 	
     GPIO_SetMode(PA, BIT0, GPIO_MODE_OUTPUT); //RUN BLED
-    GPIO_SetMode(PA, BIT1, GPIO_MODE_OUTPUT); //ST1 GLED
-    GPIO_SetMode(PA, BIT2, GPIO_MODE_OUTPUT);  //ST2 RLED
-    GPIO_SetMode(PA, BIT3, GPIO_MODE_OUTPUT);  //ST3 RLED
+    GPIO_SetMode(PA, BIT1, GPIO_MODE_QUASI); //ST1 GLED
+    GPIO_SetMode(PA, BIT2, GPIO_MODE_QUASI);  //ST2 RLED
+    GPIO_SetMode(PA, BIT3, GPIO_MODE_QUASI);  //ST3 RLED
 
 	GPIO_SetMode(PB, BIT0, GPIO_MODE_QUASI); //SW_IN1
 	GPIO_SetMode(PB, BIT1, GPIO_MODE_QUASI); //
@@ -1413,6 +1416,25 @@ void Delay(uint32_t delayCnt)
     while (delayCnt--) {
         __NOP();
         __NOP();
+	    __NOP();
+		__NOP();
+		__NOP();
+        __NOP();
+	    __NOP();
+		__NOP();
+        __NOP();
+	    __NOP();
+		
+		__NOP();		
+        __NOP();
+        __NOP();
+	    __NOP();
+		__NOP();
+		__NOP();
+        __NOP();
+	    __NOP();
+		__NOP();
+		
     }
 }
 
@@ -1484,23 +1506,23 @@ uint8_t get_TemptureValue()
 	PA15= (iner_temp_cnt & 0x04 ) >> 2;/* S2 */
 	PA14= (iner_temp_cnt  & 0x02) >> 1;/* S1 */
 	PA13= iner_temp_cnt	& 0x1; /* S0 */
-
-	PA12 = 0;
-
-
 	
-	 if(k >= 15)
-	 {
-		 k = 0;
-	 }
+	if(k >= 15)
+	{
+		k = 0;
+	}
 
+	/* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3	*/
+	
+	g_au8MstTxData[0] = 0x01;
+	g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
+	g_au8MstTxData[2] = setup_data & 0x00FF;
 
-
-				/* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3  */
-
-			g_au8MstTxData[0] = 0x01;
-			g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
-			g_au8MstTxData[2] = setup_data & 0x00FF;
+	if(get_SensorOnOff() == 1 )
+	{
+		PA12 = 0;
+		PA->DOUT = (PA->DOUT|BIT1)&(~(1<<1));
+	
 
 			if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
 			{
@@ -1521,7 +1543,13 @@ uint8_t get_TemptureValue()
 			{
 				//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
 			}
-
+	}
+	else
+	{
+		temp[iner_temp_cnt] = 0x0;
+		adc_array[iner_temp_cnt][k]=0x0;
+	}
+	PA12 = 1;
 
 
 
@@ -1533,7 +1561,6 @@ uint8_t get_TemptureValue()
 	}
 
 	 raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] / 15 ;
-
 	if(k== (15 - 1) )
 	 {
 		 printf_flag = 1;
@@ -1543,7 +1570,7 @@ uint8_t get_TemptureValue()
 	 {
 		printf("At %d [%d]", iner_temp_cnt+1,  raw_adc[iner_temp_cnt]);
 		
-		 
+#if 0
 		 for(i=0 ; i < 201 ; i++)
 		 {
 		 	if(raw_adc[iner_temp_cnt] < pt100_compare_table[i])
@@ -1552,7 +1579,7 @@ uint8_t get_TemptureValue()
 				break;
 		 	}
 		 }
-
+#endif
 
 		 if(raw_adc[iner_temp_cnt] > pt100_table[200])
 		 {
@@ -1580,10 +1607,8 @@ uint8_t get_TemptureValue()
 	
 	k++;
 
-	PA12 = 1;
 
-
-	if(iner_temp_cnt >=1)
+	if(iner_temp_cnt >=get_SensorSelect())
 	{
 		printf("\n\n");
 		iner_temp_cnt = 0;
@@ -1596,28 +1621,56 @@ uint8_t get_TemptureValue()
 
 
 
+
 	return 0;
 
 }
 
+
+
+uint8_t get_SensorSelect()
+{
+	uint8_t pin_array[3]={0x0,},get_pin_value=0;
+
+
+	pin_array[2]= 0x04  & ((0x1  & ~PB0) << 2 );
+	pin_array[1]= 0x02  & ((0x1  & ~PB1) << 1 );
+	pin_array[0]= 0x01  & (0x1  & ~PB2);
+	
+	get_pin_value = pin_array[2] | \
+					pin_array[1] | \
+					pin_array[0];
+
+
+
+	return get_pin_value;
+
+}
+
+uint8_t get_SensorOnOff()
+{
+	uint8_t pin_array=0x0;
+
+	pin_array = 0x01  & (0x1  & ~PB3) ;
+
+	
+	return pin_array;
+
+}
+
+
 uint8_t get_PinValue()
 {
-	uint8_t pin_array[8]={0x0,},get_pin_value=0;
+	uint8_t pin_array[5]={0x0,},get_pin_value=0;
 
 
-	pin_array[7]= 0x80  & ((0x1  & ~PB0) << 7 );
-	pin_array[6]= 0x40  & ((0x1  & ~PB1) << 6 );
-	pin_array[5]= 0x20  & ((0x1  & ~PB2) << 5 );
-	pin_array[4]= 0x10  & ((0x1  & ~PB3) << 4 );
+
 	pin_array[3]= 0x08  & ((0x1  & ~PB4) << 3 );
 	pin_array[2]= 0x04  & ((0x1  & ~PB5) << 2 );
 	pin_array[1]= 0x02  & ((0x1  & ~PB6) << 1 );
 	pin_array[0]= 0x01  & (0x1  & ~PB7 );
 
-	get_pin_value = pin_array[7] | \
-					pin_array[6] | \
-					pin_array[5] | \
-					pin_array[4] | \
+	get_pin_value = pin_array[4] | \
 					pin_array[3] | \
 					pin_array[2] | \
 					pin_array[1] | \
@@ -1632,6 +1685,7 @@ uint8_t get_PinValue()
 /* ------------- */
 int main(void)
 {
+
     uint32_t i, u32TimeOutCnt;
 	int local_count=0;
 
@@ -1670,15 +1724,10 @@ int main(void)
     NuConsole_Init(); 
 #endif
 
-    printf("\n\n");
-    printf("+--------------------------------------------------------------------+\n");
-    printf("|                   iMON E/S Communication Code                      |\n");
-    printf("+--------------------------------------------------------------------+\n");
-    printf("\n");
 
  #if 1
 
-	PC4 = 0;  // DOUT_EN
+	PC4 = 1;  // DOUT_EN Active Low
 	PC3 = 1; 	// DOUT_EX1
 	PC2 = 0; 	// DOUT_EX2
 	PC1 = 1;  // DOUT_EX3
@@ -1707,9 +1756,24 @@ int main(void)
   	TEMP_save =	 TEMP_Cnt / 1000000 ;
 
 
+	Delay(1000000); //1000000 1 Sec
+	Delay(1000000); //1000000 1 Sec
+	Delay(1000000); //1000000 1 Sec
+	Delay(1000000); //1000000 1 Sec
+	Delay(1000000); //1000000 1 Sec
+
+
+
+
+    printf("\n\n");
+    printf("+--------------------------------------------------------------------+\n");
+    printf("|                   iMON E/S Communication Code                      |\n");
+    printf("+--------------------------------------------------------------------+\n");
+    printf("\n");
+
     while(1)
     {
-    	if(local_count == 4)
+    	if(local_count == 25)
 		{
 			RS485_SendDataByte(g_fault_finderData, 8);
 			local_count=0;
@@ -1717,10 +1781,9 @@ int main(void)
     	local_count++;
     	
     	if(g_485_flags==1 && g_u32_485RxDataCount == 17)
-
 		{
 
-			printf("485 Received\n");
+			printf("485 Received Count %d\n",g_u32_485RxDataCount);
 #if 0
 
 			for(i=0;i<g_u32_485RxDataCount;i++)
@@ -1739,7 +1802,6 @@ int main(void)
         if(g_u8SlvTimeoutFlag)
         {
             printf(" SlaveTRx time out, any to reset IP\n");
-            getchar();
             SYS->IPRST1 |= SYS_IPRST1_I2C0RST_Msk;
             SYS->IPRST1 = 0;
             I2C0_Init();
@@ -1798,14 +1860,24 @@ int main(void)
 
 		
 
-		Delay(1000000); //3000000 1 Sec
 
-		if(TEMP_save != TEMP_Cnt / 300000)
+		Delay(50000);
+		 
+		PA->DOUT = (PA->DOUT|BIT1)&(~(0<<1));
+
+		   
+
+
+
+		if(TEMP_save != TEMP_Cnt / 1000000)
 		{
-			TEMP_save = TEMP_Cnt / 300000;
+
+			TEMP_save = TEMP_Cnt / 1000000;
 			get_TemptureValue();
+
 		}
-   		I2C_Transmit_made_test();
+
+   I2C_Transmit_made();
 
  
    }

@@ -74,5 +74,7 @@ void I2C1_IRQHandler(void);
 void Delay(uint32_t delayCnt);
 
 uint8_t get_PinValue();
+uint8_t get_SensorSelect();
 
+uint8_t get_SensorOnOff();
 
