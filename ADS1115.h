@@ -72,6 +72,7 @@ void TMR1_IRQHandler(void);
 void I2C0_IRQHandler(void);
 void I2C1_IRQHandler(void);
 void Delay(uint32_t delayCnt);
+uint16_t ModBus_CRC16 ( const unsigned char *buf, unsigned int len );
 
 uint8_t get_PinValue();
 uint8_t get_SensorSelect();

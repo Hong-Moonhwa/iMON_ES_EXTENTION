@@ -403,6 +403,7 @@ void set_CRC16_faultfinder()
 {
 
 	uint8_t pin_value =0x0;
+	uint16_t crc16_result = 0x0;
 
 	pin_value = get_PinValue();
 	g_fault_finderData[0] = pin_value;
@@ -415,20 +416,13 @@ void set_CRC16_faultfinder()
 
 
 
-	switch(pin_value)
-	{
-		case 0x1:
-			g_fault_finderData[6] = 0x94;
-			g_fault_finderData[7] = 0x08;
-			break;
-		case 0x2:
-			g_fault_finderData[6] = 0x94;
-			g_fault_finderData[7] = 0x3b;
-			break;
+	crc16_result = ModBus_CRC16(g_fault_finderData,6);
 
-		default :
-		
-	}
+    g_fault_finderData[6] = crc16_result & 0xff;  
+    g_fault_finderData[7] = (crc16_result >> 8) & 0xff;
+
+	printf("\nCRC16 VALUE [0x%02x][0x%02x]",g_fault_finderData[6],g_fault_finderData[7]);
+
 
 }
 
@@ -1467,6 +1461,29 @@ void RS485_ReadDataByte(uint8_t *puRTxBuf, uint32_t u32ReadBytes)
 
     /* Send data */
     UART_Read(UART0, puRTxBuf, u32ReadBytes);
+}
+uint16_t ModBus_CRC16 ( const unsigned char *buf, unsigned int len )
+{
+	static const uint16_t table[2] = { 0x0000, 0xA001 };
+	uint16_t crc = 0xFFFF;
+	unsigned int i = 0;
+	char bit = 0;
+	unsigned int xor = 0;
+
+	for( i = 0; i < len; i++ )
+	{
+		crc ^= buf[i];
+
+		for( bit = 0; bit < 8; bit++ )
+		{
+			xor = crc & 0x01;
+			crc >>= 1;
+			crc ^= table[xor];
+		}
+	}
+
+	return crc;
+	
 }
 
 uint8_t get_TemptureValue()
