@@ -1587,7 +1587,7 @@ uint8_t get_TemptureValue()
 	 {
 		printf("At %d [%d]", iner_temp_cnt+1,  raw_adc[iner_temp_cnt]);
 		
-#if 0
+#if 1
 		 for(i=0 ; i < 201 ; i++)
 		 {
 		 	if(raw_adc[iner_temp_cnt] < pt100_compare_table[i])
