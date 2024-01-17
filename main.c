@@ -17,7 +17,12 @@
 #define PLLCTL_SETTING      CLK_PLLCTL_72MHz_HXT
 #define PLL_CLOCK           72000000
 
-
+enum comm_485_status {
+    comm_485_ready = 0 ,
+    comm_485_done = 1,
+    comm_485_error = 2
+};
+static uint8_t g_comm_485_status = comm_485_ready;
 
 const uint16_t pt100_table[201] = {
 	10000, 	10039,	10078,	10117,	10156,	10195,	10234,	10273,	10312,	10351,   //   0 -   9 
@@ -42,7 +47,8 @@ const uint16_t pt100_table[201] = {
 	17217,	17254,	17291,	17328,	17365,	17402,	17438,	17475,	17512,	17549,   // 190 - 199 
 	17586}; /* 200 */
 
-const uint16_t pt100_margin_table[201] = {
+/* 1 Sensor */
+const uint16_t pt100_margin_1table[201] = {
      3452,   3421,   3390,   3359,   3328,   3297,   3266,   3235,   3204,   3173,   //   0 -   9
      3142,   3111,   3080,   3049,   3018,   2987,   2956,   2925,   2894,   2864,   //  10 -  19
      2833,   2821,   2773,   2743,   2713,   2684,   2654,   2624,   2594,   2564,   //  20 -  29 
@@ -64,7 +70,7 @@ const uint16_t pt100_margin_table[201] = {
 		0,	    0,	    0,	    0,	    0,	    0, 	    0,	    0,	    0,	    0,   // 180 - 189
 		0,	    0,	    0,	    0,	    0,	    0, 	    0,	    0,	    0,	    0,   // 190 - 199 	
 		0}; /* 200 */
-const uint16_t pt100_compare_table[201] = {
+const uint16_t pt100_compare_1table[201] = {
 	13452,  13460,  13468,  13476,  13484,  13492,  13500,  13508,  13516,  13524,	 //   0 -   9	
     13532,  13540,  13548,  13556,  13564,  13572,  13580,  13588,  13596,  13604,   //  10 -  19 
 	13612,	13639,	13630,	13639,	13648,	13657,	13666,	13675,	13684,	13693,   //  20 -  29 
@@ -87,29 +93,56 @@ const uint16_t pt100_compare_table[201] = {
 	17217,	17254,	17291,	17328,	17365,	17402,	17438,	17475,	17512,	17549,   // 190 - 199 
 	17586}; /* 200 */
 
-#if 0
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   //   0 -   9 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   //  10 -  19 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   //  20 -  29 
-		0,		0,		0,		0,	13742,		0,  13763,  	0,		0,	13802,   //  30 -  39 
-	    0, 		0,		0,		0,	13865,		0,	13885,	13918,		0,	13937,   //  40 -  49 
-	    0, 		0,		0,  13965,		0,	13990,		0,	14034,		0,		0,   //  50 -  59 
-	    0, 	14066,		0,		0,	14104,		0,		0,		0,	14145,		0,   //  60 -  69 
-	    0, 		0,	14200,		0,		0,		0,		0,	14260,		0,		0,   //  70 -  79 
-	    0, 		0,		0,		0,		0,	14338,		0,		0,		0,		0,   //  80 -  89 
-		0,		0,		0,		0,		0,		0,  14510,		0,		0,		0,   //  90 -  99 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 100 - 109 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 110 - 119 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 120 - 129 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 130 - 139 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 140 - 149 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 150 - 159 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 160 - 169 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 170 - 179 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 180 - 189 
-	    0, 		0,		0,		0,		0,		0,		0,		0,		0,		0,   // 190 - 199 
-		0 /* 200 */
-#endif
+
+
+const uint16_t pt100_margin_4table[201] = {
+     3452,   3421,   3390,   3359,   3328,   3297,   3266,   3235,   3204,   3173,   //   0 -   9
+     3142,   3111,   3080,   3049,   3018,   2987,   2956,   2925,   3576,   2864,   //  10 -  19
+     2833,   2821,   2773,   2743,   2713,   2684,   2654,   2624,   2594,   2564,   //  20 -  29 
+     2535,   2506,   2477,   2449,   2420,   2391,   2363,   2338,   2312,   2287,   //  30 -  39
+     2260,   2234,   2208,   2182,   2157,   2128,   2099,   2094,   2064,   2036,   //  40 -  49 
+     2002,   1971,   1939,   1910,   1883,   1858,   1841,   1825,   1795,   1764,   //  50 -  59
+     1734,   1703,   1677,   1652,   1626,   1598,   1570,   1541,   1514,   1489,   //  60 -  69 
+     1464,   1440,   1416,   1390,   1363,   1337,   1311,   1285,   1256,   1227,   //  70 -  79 
+	 1199,   1171,   1142,   1114,   1086,   1058,   1037,   1015,    994,    956,   //  80 -  89 
+	  935,    914,    893,    872,    852,    831,    811,    780,    747,    717,   //  90 -  99 
+	  687,	  657,	  627,	  597,	  567,	  537,    507,	  477,	  447,	  417,   // 100 - 109 
+	  387,	  357,	  327,	  297,	  267,	  237,    207,	  177,	  147,	  117,   // 110 - 119 
+	   87,     57,     27,      0,	    0,	    0,	    0,	    0,	    0,	    0,   // 120 - 129
+		0,	    0,	    0,	    0,	    0,	    0, 	    0,	    0,	    0,	    0,   // 130 - 139
+		0,	    0,	    0,	    0,	    0,	    0, 	    0,	    0,	    0,	    0,   // 140 - 149 
+		0,	    0,	    0,	    0,	    0,	    0, 	    0,	    0,	    0,	    0,   // 150 - 159
+		0,	    0,	    0,	    0,	    0,	    0, 	    0,	    0,	    0,	    0,   // 160 - 169
+		0,	    0,	    0,	    0,	    0,	    0, 	    0,	    0,	    0,	    0,   // 170 - 179 
+		0,	    0,	    0,	    0,	    0,	    0, 	    0,	    0,	    0,	    0,   // 180 - 189
+		0,	    0,	    0,	    0,	    0,	    0, 	    0,	    0,	    0,	    0,   // 190 - 199 	
+		0}; /* 200 */
+const uint16_t pt100_compare_4table[201] = {
+	13452,  13460,  13468,  13476,  13484,  13492,  13500,  13508,  13516,  13524,	 //   0 -   9	
+    13532,  13540,  13548,  13556,  13564,  13572,  13580,      0,  14278,      0,   //  10 -  19 
+	13612,	13639,	13630,	13639,	13648,	13657,	13666,	13675,	13684,	13693,   //  20 -  29 
+	13702,	13712,	13722,	    0,	14420,	    0,  13763,  13776,	13789,	13802,   //  30 -  39 
+	13814,  13827,	13839,	13852,	13865,	13875,	13885,	13918,	13927,	13937,   //  40 -  49 
+	13942, 	13949,   	0,  13900,  	0,	13990,	14012,	14034,	14042,	14050,   //  50 -  59 
+	14058, 	14066,	14078, 	14091,	14104,	14114,	14124,	14134,	14145,	14158,   //  60 -  69 
+	14172,	14186,	14200,	14212,	14224,	14236,	14248,	14260,	14269,  14279,   //  70 -  79 
+	14289, 	14299,	14308,	14318,	14328,	14338,	14355,  14372,	14389,	14389,   //  80 -  89 
+	14406,	14423,	14440,	14457,	14475,	    0,  12100,	    0,	14522,	14530,   //  90 -  99 
+	14538,	14545,	14553,	14561,	14569,	14577,	14585,	14593,	14601,	14608,   // 100 - 109  
+	14616,	14624,	14632,	14640,	14647,	14655,	14663,	14671,	14678,	14686,   // 110 - 119
+	14694,	14701,	14709,	14720,	14757,	14795,	14833,	14870,	14908,	14946,   // 120 - 129 
+	14983,	15021,	15058,	15096,	15133,	15171,	15208,	15246,	15283,	15321,   // 130 - 139 
+	15358,	15396,	15433,	15471,	15508,	15546,	15583,	15620,	15658,	15695,   // 140 - 149
+	15733,	15770,	15807,	15845,	15882,	15919,	15956,	15994,	16031,	16068,   // 150 - 159 
+	16105,	16143,	16180,	16217,	16254,	16291,	16329,	16366,	16403,	16440,   // 160 - 169 
+	16477,	16514,	16551,	16589,	16626,	16663,	16700,	16737,	16774,	16811,   // 170 - 179 
+	16848,	16885,	16922,	16959,	16996,	17033,	17070,	17107,	17143,	17180,   // 180 - 189 
+	17217,	17254,	17291,	17328,	17365,	17402,	17438,	17475,	17512,	17549,   // 190 - 199 
+	17586}; /* 200 */
+
+
+
+
 /*---------------------------------------------------------------------------------------------------------*/
 /* Global variables                                                                                       */
 /*---------------------------------------------------------------------------------------------------------*/
@@ -205,6 +238,16 @@ static  uint8_t g_u8MstTimeoutFlag = 0;
 static  uint8_t g_testCount50_flag = 2;
 static uint8_t g_tempture_value[8]={0,};
 
+void set_485comm_status(uint8_t set_status)
+{
+	g_comm_485_status = set_status;
+}
+
+uint8_t get_485comm_status()
+{
+	return	g_comm_485_status;
+
+}
 
 /*---------------------------------------------------------------------------------------------------------*/
 /*  I2C0 IRQ Handler                                                                                       */
@@ -542,6 +585,135 @@ int I2C_Transmit_made_test()
 		 
 }
 
+
+
+void get_TemptureWarningCheck()
+{
+	 if(g_tempture_value[0] > 110)
+	 {
+		g_au8SlvData[7] = 0x01;
+		g_au8SlvData[9] = 0x47;
+	 }
+	
+	 if(g_au8SlvData[7] == 0x01 && g_au8SlvData[9] == 0x47)
+	 {
+		 if(g_tempture_value[0] <= 110)
+		{
+			g_au8SlvData[7] = 0x00;
+			g_au8SlvData[9] = 0x00;
+		}
+	 }
+	 
+	 if( g_tempture_value[1] > 95)
+	 {
+		 g_au8SlvData[7] = 0x01;
+		 g_au8SlvData[9] = 0x48;
+	 }	
+	
+	 if(g_au8SlvData[7] == 0x01 && g_au8SlvData[9] == 0x48)
+	 {
+		 if(g_tempture_value[1] <= 95)
+		{
+			g_au8SlvData[7] = 0x00;
+			g_au8SlvData[9] = 0x00;
+		}
+	 }
+	
+	 
+	 if( g_tempture_value[2] > 95)
+	 {
+		g_au8SlvData[7] = 0x01;
+		g_au8SlvData[9] = 0x48;
+	
+	 }
+	
+	 if(g_au8SlvData[7] == 0x01 && g_au8SlvData[9] == 0x48)
+	 {
+		 if(g_tempture_value[2] <= 95)
+		{
+			g_au8SlvData[7] = 0x00;
+			g_au8SlvData[9] = 0x00;
+		}
+	 }
+	
+	 
+	 if( g_tempture_value[3] > 100)
+	 {
+		g_au8SlvData[7] = 0x01;
+		g_au8SlvData[9] = 0x49;
+	 }
+	
+	if(g_au8SlvData[7] == 0x01 && g_au8SlvData[9] == 0x49)
+	{
+		if(g_tempture_value[3] <= 100)
+		{
+		   g_au8SlvData[7] = 0x00;
+		   g_au8SlvData[9] = 0x00;
+		}
+	}
+
+
+}
+
+
+
+int I2C_Transmit_clean()
+{
+	
+		 g_au8SlvData[0] = 0xff;
+		 g_au8SlvData[1] = get_PinValue();
+	     g_au8SlvData[2] = 0x00;
+		 g_au8SlvData[3] = 0x1e;	 
+		 g_au8SlvData[4] = 0x00;
+	     g_au8SlvData[5] = 0x00;
+		 g_au8SlvData[6] = 0x00;
+	     g_au8SlvData[7] = 0x01;
+
+
+		 g_au8SlvData[8] = 0x00;
+		 g_au8SlvData[9] = 0x3C;
+
+		 g_au8SlvData[10] = 0x1;
+
+		 
+		 g_au8SlvData[11] = 0x00;   /* Tempeture */
+		 g_au8SlvData[12] = g_tempture_value[0]; 
+		 
+		 g_au8SlvData[13] = 0x00;   /* Tempeture */
+		 g_au8SlvData[14] = g_tempture_value[1];   
+		 
+		 g_au8SlvData[15] = 0x00;   /* Tempeture */		
+		 g_au8SlvData[16] = g_tempture_value[2]; 
+		 
+		 g_au8SlvData[17] = 0x00;   /* Tempeture */
+		 g_au8SlvData[18] = g_tempture_value[3];   
+		 
+		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
+		 g_au8SlvData[20] = g_tempture_value[4];
+		 
+		 g_au8SlvData[21] = 0x0;   /* Temp Tempeture */
+		 g_au8SlvData[22] = g_tempture_value[5];
+		 
+		 g_au8SlvData[23] = 0x0;  /* Temp Tempeture */
+		 g_au8SlvData[24] = g_tempture_value[6];
+		 
+		 g_au8SlvData[25] = 0x0;    /* Temp Tempeture */	
+		 g_au8SlvData[26] = g_tempture_value[7];
+		 
+		 g_au8SlvData[27] = 0x00;  /* Reserved */
+		 g_au8SlvData[28] = 0x00;  /* Reserved */
+		 g_au8SlvData[29] = 0x00;  /* Reserved */
+		 g_au8SlvData[30] = 0x00;  /* Reserved */
+		 g_au8SlvData[31] = EXTEN_BD_TYPE;  /* Extend Board Type */
+		 
+		 g_au8SlvData[32] = 0x01; /* Board Major Version */
+		 g_au8SlvData[33] = 0x00; /* Board Minor Version */
+		 
+		 g_au8SlvData[34] = 0xf8;  /* EXT */
+		 
+		get_TemptureWarningCheck(); 
+}
+
 int I2C_Transmit_made()
 {
 	
@@ -596,6 +768,10 @@ int I2C_Transmit_made()
 		 
 		 g_au8SlvData[34] = 0xf8;  /* EXT */
 		 
+
+		get_TemptureWarningCheck();
+
+
 		 
 }
 
@@ -670,7 +846,12 @@ void I2C_SlaveTRx(uint32_t u32Status)
 
         I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI_AA);
 		printf("iMON Send OK\n");
-		
+#if 0
+		for(int i=0; i<35;  i++)
+		{
+			printf("%02x ",g_au8SlvData[i]);
+		}
+#endif		
     }
     else if(u32Status == 0x88)                 /* Previously addressed with own SLA address; NOT ACK has
                                                    been returned */
@@ -1588,14 +1769,57 @@ uint8_t get_TemptureValue()
 		printf("At %d [%d]", iner_temp_cnt+1,  raw_adc[iner_temp_cnt]);
 		
 #if 1
-		 for(i=0 ; i < 201 ; i++)
-		 {
-		 	if(raw_adc[iner_temp_cnt] < pt100_compare_table[i])
-		 	{
-		 		raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] - pt100_margin_table[i] ;
-				break;
-		 	}
-		 }
+
+
+		if(0 == get_SensorSelect())
+		{
+			 for(i=0 ; i < 201 ; i++)
+			 {
+			 	if(raw_adc[iner_temp_cnt] < pt100_compare_1table[i])
+			 	{
+			 		raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] - pt100_margin_1table[i] ;
+					break;
+			 	}
+			 }
+		}
+		else if(1 == get_SensorSelect())
+		{
+			 for(i=0 ; i < 201 ; i++)
+			 {
+			 	if(raw_adc[iner_temp_cnt] < pt100_compare_1table[i])
+			 	{
+			 		raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] - pt100_margin_1table[i] ;
+					break;
+			 	}
+			 }
+		}
+		else if(2 == get_SensorSelect())
+		{
+			 for(i=0 ; i < 201 ; i++)
+			 {
+			 	if(raw_adc[iner_temp_cnt] < pt100_compare_1table[i])
+			 	{
+			 		raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] - pt100_margin_1table[i] ;
+					break;
+			 	}
+			 }
+		}		
+		else if(3 == get_SensorSelect())
+		{
+			 for(i=0 ; i < 201 ; i++)
+			 {
+			 	if(raw_adc[iner_temp_cnt] < pt100_compare_4table[i])
+			 	{
+			 		raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] - pt100_margin_4table[i] ;
+					break;
+			 	}
+			 }
+		}
+		else
+		{
+			/* Blank Not Supported */
+		}	
+				
 #endif
 
 		 if(raw_adc[iner_temp_cnt] > pt100_table[200])
@@ -1687,8 +1911,7 @@ uint8_t get_PinValue()
 	pin_array[1]= 0x02  & ((0x1  & ~PB6) << 1 );
 	pin_array[0]= 0x01  & (0x1  & ~PB7 );
 
-	get_pin_value = pin_array[4] | \
-					pin_array[3] | \
+	get_pin_value = pin_array[3] | \
 					pin_array[2] | \
 					pin_array[1] | \
 					pin_array[0];
@@ -1702,7 +1925,7 @@ uint8_t get_PinValue()
 /* ------------- */
 int main(void)
 {
-
+	uint8_t u485Recv_Cnt=0;
     uint32_t i, u32TimeOutCnt;
 	int local_count=0;
 
@@ -1787,21 +2010,34 @@ int main(void)
     printf("|                   iMON E/S Communication Code                      |\n");
     printf("+--------------------------------------------------------------------+\n");
     printf("\n");
+	I2C_Transmit_clean();
 
     while(1)
     {
     	if(local_count == 25)
-		{
+		{	
 			RS485_SendDataByte(g_fault_finderData, 8);
 			local_count=0;
+			
+			if(u485Recv_Cnt > 3)
+			{
+				set_485comm_status(comm_485_error);	
+				I2C_Transmit_clean();
+			}
+			else
+			{
+				u485Recv_Cnt++;
+			}
     	}
     	local_count++;
     	
-    	if(g_485_flags==1 && g_u32_485RxDataCount == 17)
+    	
+    	//if(g_485_flags==1 && g_u32_485RxDataCount == 17)
+    	if(g_485_flags==1 && g_u32_485RxDataCount > 1)
 		{
 
 			printf("485 Received Count %d\n",g_u32_485RxDataCount);
-#if 0
+#if 1
 
 			for(i=0;i<g_u32_485RxDataCount;i++)
 			{
@@ -1812,7 +2048,10 @@ int main(void)
 #endif
 			g_485_flags = 0 ;
 			g_u32_485RxDataCount=0;
+			u485Recv_Cnt= 0;
+			set_485comm_status(comm_485_done);
 			//I2C_Transmit_made_test();
+		   	I2C_Transmit_made();
 		}
 
         /* Handle Slave timeout condition */
@@ -1894,7 +2133,7 @@ int main(void)
 
 		}
 
-   I2C_Transmit_made();
+
 
  
    }
