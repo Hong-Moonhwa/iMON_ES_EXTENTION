@@ -22,7 +22,16 @@ enum comm_485_status {
     comm_485_done = 1,
     comm_485_error = 2
 };
+
+enum oil_level_status {
+    oil_level_ready = 2 ,
+    oil_level_normal = 1,
+    oil_level_warning = 0
+};
+
 static uint8_t g_comm_485_status = comm_485_ready;
+static uint8_t g_oil_level_status = oil_level_ready;
+
 
 const uint16_t pt100_table[201] = {
 	10000, 	10039,	10078,	10117,	10156,	10195,	10234,	10273,	10312,	10351,   //   0 -   9 
@@ -284,6 +293,19 @@ static  uint8_t g_u8MstTimeoutFlag = 0;
 
 static  uint8_t g_testCount50_flag = 2;
 static uint8_t g_tempture_value[8]={0,};
+
+void set_oillevel_status(uint8_t set_status)
+{
+	g_oil_level_status = set_status;
+}
+
+uint8_t get_oillevel_status()
+{
+	return	g_oil_level_status;
+
+}
+
+
 
 void set_485comm_status(uint8_t set_status)
 {
@@ -720,20 +742,20 @@ int I2C_Transmit_clean()
 		 g_au8SlvData[8] = 0x00;
 		 g_au8SlvData[9] = 0x3C;
 
-		 g_au8SlvData[10] = 0x1;
+		 g_au8SlvData[10] = get_oillevel_status();
 
 		 
 		 g_au8SlvData[11] = 0x00;   /* Tempeture */
-		 g_au8SlvData[12] = g_tempture_value[0]; 
+		 g_au8SlvData[12] = 50;//g_tempture_value[0]; 
 		 
 		 g_au8SlvData[13] = 0x00;   /* Tempeture */
-		 g_au8SlvData[14] = g_tempture_value[1];   
+		 g_au8SlvData[14] = 50;//g_tempture_value[1];   
 		 
 		 g_au8SlvData[15] = 0x00;   /* Tempeture */		
-		 g_au8SlvData[16] = g_tempture_value[2]; 
+		 g_au8SlvData[16] = 50;//g_tempture_value[2]; 
 		 
 		 g_au8SlvData[17] = 0x00;   /* Tempeture */
-		 g_au8SlvData[18] = g_tempture_value[3];   
+		 g_au8SlvData[18] = 50;//g_tempture_value[3];   
 		 
 		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
 		 g_au8SlvData[20] = g_tempture_value[4];
@@ -777,20 +799,20 @@ int I2C_Transmit_made()
 		 g_au8SlvData[8] = 0x00;
 		 g_au8SlvData[9] = g_fault_RecvData[14];
 
-		 g_au8SlvData[10] = 0x1;
+		 g_au8SlvData[10] = get_oillevel_status();
 
 		 
 		 g_au8SlvData[11] = 0x00;   /* Tempeture */
-		 g_au8SlvData[12] = g_tempture_value[0]; 
+		 g_au8SlvData[12] = 50;//g_tempture_value[0]; 
 		 
 		 g_au8SlvData[13] = 0x00;   /* Tempeture */
-		 g_au8SlvData[14] = g_tempture_value[1];   
+		 g_au8SlvData[14] = 50;//g_tempture_value[1];   
 		 
 		 g_au8SlvData[15] = 0x00;   /* Tempeture */		
-		 g_au8SlvData[16] = g_tempture_value[2]; 
+		 g_au8SlvData[16] = 50;//g_tempture_value[2]; 
 		 
 		 g_au8SlvData[17] = 0x00;   /* Tempeture */
-		 g_au8SlvData[18] = g_tempture_value[3];   
+		 g_au8SlvData[18] = 50;//g_tempture_value[3];   
 		 
 		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
 		 g_au8SlvData[20] = g_tempture_value[4];
@@ -2138,24 +2160,67 @@ int main(void)
 
 #endif
 
+#if 0
 		if(PD15==1)
 		{
-				printf("DIN4 Detected\n");// DIN4
+				set_oillevel_status (oil_level_normal);
+		}
+		else
+		{
+				if(local_count == 25)
+				{
+					printf("OIL Level DIN4 Warning\n");// DIN4
+				}
+				set_oillevel_status(oil_level_warning);
+
 		}
 
+#endif
+
+#if 0
 		if(PD14==1)
 		{
-				printf("DIN3 Detected\n");// DIN3
+				set_oillevel_status (oil_level_normal);
 		}
+		else
+		{
+				if(local_count == 25)
+				{
+					printf("OIL Level DIN3 Warning\n");// DIN3
+				}
+				set_oillevel_status(oil_level_warning);
+
+		}
+#endif
 
 
+#if 0
 		if(PD13==1)
 		{
-				printf("DIN2 Detected\n");// DIN2
+				set_oillevel_status (oil_level_normal);
 		}
+		else
+		{
+				if(local_count == 25)
+				{
+					printf("OIL Level DIN2 Warning\n");// DIN2
+				}
+				set_oillevel_status(oil_level_warning);
+
+		}
+#endif
+		
 		if(PD12==1)
 		{
-				printf("DIN1 Detected\n");// DIN1
+				set_oillevel_status(oil_level_normal);
+		}
+		else
+		{		
+				if(local_count == 25)
+				{
+					printf("OIL Level DIN1 Warning\n");// DIN1
+				}
+				set_oillevel_status(oil_level_warning);
 		}
 
 		
