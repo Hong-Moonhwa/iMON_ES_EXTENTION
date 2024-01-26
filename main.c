@@ -767,16 +767,16 @@ int I2C_Transmit_clean()
 
 		 
 		 g_au8SlvData[11] = 0x00;   /* Tempeture */
-		 g_au8SlvData[12] = 50;//g_tempture_value[0]; 
+		 g_au8SlvData[12] = g_tempture_value[0]; 
 		 
 		 g_au8SlvData[13] = 0x00;   /* Tempeture */
-		 g_au8SlvData[14] = 50;//g_tempture_value[1];   
+		 g_au8SlvData[14] = g_tempture_value[1];   
 		 
 		 g_au8SlvData[15] = 0x00;   /* Tempeture */		
-		 g_au8SlvData[16] = 50;//g_tempture_value[2]; 
+		 g_au8SlvData[16] = g_tempture_value[2]; 
 		 
 		 g_au8SlvData[17] = 0x00;   /* Tempeture */
-		 g_au8SlvData[18] = 50;//g_tempture_value[3];   
+		 g_au8SlvData[18] = g_tempture_value[3];   
 		 
 		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
 		 g_au8SlvData[20] = g_tempture_value[4];
@@ -824,16 +824,16 @@ int I2C_Transmit_made()
 
 		 
 		 g_au8SlvData[11] = 0x00;   /* Tempeture */
-		 g_au8SlvData[12] = 50;//g_tempture_value[0]; 
+		 g_au8SlvData[12] = g_tempture_value[0]; 
 		 
 		 g_au8SlvData[13] = 0x00;   /* Tempeture */
-		 g_au8SlvData[14] = 50;//g_tempture_value[1];   
+		 g_au8SlvData[14] = g_tempture_value[1];   
 		 
 		 g_au8SlvData[15] = 0x00;   /* Tempeture */		
-		 g_au8SlvData[16] = 50;//g_tempture_value[2]; 
+		 g_au8SlvData[16] = g_tempture_value[2]; 
 		 
 		 g_au8SlvData[17] = 0x00;   /* Tempeture */
-		 g_au8SlvData[18] = 50;//g_tempture_value[3];   
+		 g_au8SlvData[18] = g_tempture_value[3];   
 		 
 		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
 		 g_au8SlvData[20] = g_tempture_value[4];
@@ -1828,24 +1828,16 @@ uint8_t get_TemptureValue()
 			 	//printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
 //				printf("Diff 13  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
 				
-			 	//temp[iner_temp_cnt] = ((g_u8MstRxData[0] & 0xFF) * 256 + (g_u8MstRxData[1] & 0xFF));
 			 	temp13[iner_temp_cnt] = 0;
 				temp13[iner_temp_cnt] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
-#if 0			
-				if (temp[iner_temp_cnt] > 32767)
-			 	{
-					temp[iner_temp_cnt] -= 65535;
-				 }
-#endif			
-
-
-
 
 			}
 			else
 			{
 				//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
 			}
+
+
 
 			Delay(50000);
 
@@ -1876,7 +1868,7 @@ uint8_t get_TemptureValue()
 	if(get_i2sensor_status() == i2c_sensor_normal)
 	{
 		adc_array[iner_temp_cnt][k]= (((2*temp23[iner_temp_cnt]) - temp13[iner_temp_cnt] - temp23[iner_temp_cnt])* 10000) / temp13[iner_temp_cnt] ; 
-		printf("DEBUG ADC AT %d [%d]",iner_temp_cnt+1, adc_array[iner_temp_cnt][k]);
+		printf("One Point ADC %d. [%d]",iner_temp_cnt+1, adc_array[iner_temp_cnt][k]);
 	}
 	else if(get_i2sensor_status() == i2c_sensor_fail)
 	{
@@ -1903,7 +1895,7 @@ uint8_t get_TemptureValue()
 
 	if(printf_flag==1)
 	 {
-		printf("At %d %d]", iner_temp_cnt+1,  raw_adc[iner_temp_cnt]);
+		printf(" [Avg: %d]",  raw_adc[iner_temp_cnt]);
 		
 #if 0
 
@@ -1980,17 +1972,17 @@ uint8_t get_TemptureValue()
 		 }
 
 	
-	     printf("Real [%d] C\n",  g_tempture_value[iner_temp_cnt]);
+	     printf(" Real [%d] C\n",  g_tempture_value[iner_temp_cnt]);
 	 }
 	
-	k++;
+	
 
 
 	if(iner_temp_cnt >=get_SensorSelect())
 	{
-		printf("\n\n");
+		printf("\n");
 		iner_temp_cnt = 0;
-
+		k++;
 	}
 	else
 	{
@@ -2062,9 +2054,10 @@ uint8_t get_PinValue()
 /* ------------- */
 int main(void)
 {
-	uint8_t u485Recv_Cnt=0;
+	uint8_t u485Recv_Cnt=0, crc_finderData[2];
     uint32_t i, u32TimeOutCnt;
 	int local_count=0;
+	uint16_t crc16_result = 0x0;
 
     PIDS.Kp = 0.4;
     PIDS.Ki = 0.4;
@@ -2151,7 +2144,7 @@ int main(void)
 
     while(1)
     {
-    	if(local_count == 25)
+    	if(local_count == 1)
 		{	
 			RS485_SendDataByte(g_fault_finderData, 8);
 			local_count=0;
@@ -2173,8 +2166,8 @@ int main(void)
     	if(g_485_flags==1 && g_u32_485RxDataCount > 1)
 		{
 
-			printf("485 Received Count %d\n",g_u32_485RxDataCount);
-#if 1
+			printf("\nFault Finder Data Cnt %d\n",g_u32_485RxDataCount);
+#if 0
 
 			for(i=0;i<g_u32_485RxDataCount;i++)
 			{
@@ -2183,12 +2176,30 @@ int main(void)
 			}
 			printf("\n ");
 #endif
+		
+			crc16_result = ModBus_CRC16(g_fault_RecvData,15);
+			
+			crc_finderData[1] = (crc16_result >> 8) & 0xff;
+			crc_finderData[0] = crc16_result & 0xff;  
+
+			
+
+			if(crc_finderData[0] == g_fault_RecvData[15] && crc_finderData[1] == g_fault_RecvData[16] )
+			{
+				I2C_Transmit_made();
+			}
+			else
+			{
+				printf("Result CRC16 Wrong [0x%02x:0x%02x] =! Received [0x%02x:0x%02x]\n", crc_finderData[0],crc_finderData[1], \
+																				g_fault_RecvData[15],g_fault_RecvData[16]);
+				I2C_Transmit_clean();
+			}
 			g_485_flags = 0 ;
 			g_u32_485RxDataCount=0;
 			u485Recv_Cnt= 0;
 			set_485comm_status(comm_485_done);
 			//I2C_Transmit_made_test();
-		   	I2C_Transmit_made();
+		   	
 		}
 
         /* Handle Slave timeout condition */
@@ -2284,7 +2295,7 @@ int main(void)
 		}
 		else
 		{		
-				if(local_count == 25)
+				if(local_count == 20)
 				{
 					printf("OIL Level DIN1 Warning\n");// DIN1
 				}
