@@ -29,8 +29,16 @@ enum oil_level_status {
     oil_level_warning = 0
 };
 
+
+enum i2c_sensor_status {
+    i2c_sensor_ready = 2 ,
+    i2c_sensor_normal = 1,
+    i2c_sensor_fail = 0
+};
+
 static uint8_t g_comm_485_status = comm_485_ready;
 static uint8_t g_oil_level_status = oil_level_ready;
+static uint8_t g_i2c_sensor_status = i2c_sensor_normal;
 
 
 const uint16_t pt100_table[201] = {
@@ -293,6 +301,19 @@ static  uint8_t g_u8MstTimeoutFlag = 0;
 
 static  uint8_t g_testCount50_flag = 2;
 static uint8_t g_tempture_value[8]={0,};
+
+
+void set_i2sensor_status(uint8_t set_status)
+{
+	g_i2c_sensor_status = set_status;
+}
+
+uint8_t get_i2sensor_status()
+{
+	return	g_i2c_sensor_status;
+
+}
+
 
 void set_oillevel_status(uint8_t set_status)
 {
@@ -995,6 +1016,7 @@ void I2C1_IRQHandler(void)
         /* Clear I2C1 Timeout Flag */
         I2C_ClearTimeoutFlag(I2C1);
         g_u8MstTimeoutFlag = 1;
+
     }
     else
     {
@@ -1315,9 +1337,9 @@ uint8_t static count_i =0;
 void I2C_MasterRx(uint32_t u32Status)
 {
 
-	
+	Delay(200);
 
-//	printf("\nI2C  I2C_MasterRx Status 0x%x\n", u32Status);
+	//printf("\nI2C  I2C_MasterRx Status 0x%x\n", u32Status);
 
     uint32_t u32TimeOutCnt;
 
@@ -1354,6 +1376,7 @@ void I2C_MasterRx(uint32_t u32Status)
     else if(u32Status == 0x40)                  /* SLA+R has been transmitted and ACK has been received */
     {
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
+       //I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI);
 		
     }
 	else if(u32Status == 0x50)                 /*50H, DATA received, ACK transmitted*/
@@ -1364,13 +1387,13 @@ void I2C_MasterRx(uint32_t u32Status)
 		 {
 
 			 g_u8MstRxData[count_i] = (unsigned char) I2C_GET_DATA(I2C1);
-			 I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+			 I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI_AA);
 //			 printf("\n0x50 RX DATA : 0x%x\n",g_u8MstRxData[count_i]);
 			 count_i++;
 		 }
 		 else if(count_i==2)
 		 {
-			 I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+			 I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
 				 g_u8MstEndFlag = 1;
 		 }	
 
@@ -1383,7 +1406,7 @@ void I2C_MasterRx(uint32_t u32Status)
 		 {
 
 			 g_u8MstRxData[count_i] = (unsigned char) I2C_GET_DATA(I2C1);
-			 I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
+			 I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
 //			  printf("\n0x58 RX DATA : 0x%x\n",g_u8MstRxData[count_i]);
 			 count_i++;
 		 }
@@ -1453,8 +1476,9 @@ void I2C_MasterRx(uint32_t u32Status)
 /*---------------------------------------------------------------------------------------------------------*/
 void I2C_MasterTx(uint32_t u32Status)
 {
+	Delay(300);
 
-//	printf("\nI2C  I2C_MasterTx Status 0x%x\n", u32Status);
+	//printf("\nI2C  I2C_MasterTx Status 0x%x\n", u32Status);
     uint32_t u32TimeOutCnt;
 
     if(u32Status == 0x08)                       /* START has been transmitted */
@@ -1473,7 +1497,7 @@ void I2C_MasterTx(uint32_t u32Status)
     }
     else if(u32Status == 0x20)                  /* SLA+W has been transmitted and NACK has been received */
     {
-        I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
+        //I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
         //I2C_STOP(I2C1);
         //I2C_START(I2C1);
     }
@@ -1488,7 +1512,7 @@ void I2C_MasterTx(uint32_t u32Status)
 	    else
         {
 //            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
-            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI_AA);
+            I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
             g_u8MstEndFlag = 1;
         }
     }
@@ -1582,6 +1606,7 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
             {
                 if(g_u8MstTimeoutFlag)
                 {
+                	set_i2sensor_status(i2c_sensor_fail);
                     printf(" MasterTx time out, any to reset IP\n");
                     SYS->IPRST1 |= SYS_IPRST1_I2C1RST_Msk;
                     SYS->IPRST1 = 0;
@@ -1603,7 +1628,7 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
                 break;
             }
 			//Delay(1000);	
-
+			Delay(100);	
             /* I2C function to read data from slave */
             s_I2C1HandlerFn = (I2C_FUNC)I2C_MasterRx;
 
@@ -1616,6 +1641,7 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
             do {
                 if(g_u8MstTimeoutFlag)
                 {
+                	set_i2sensor_status(i2c_sensor_fail);
                     /* When I2C timeout, reset IP */
                     printf(" MasterRx time out, any to reset IP\n");
                     SYS->IPRST1 |= SYS_IPRST1_I2C1RST_Msk;
@@ -1847,10 +1873,15 @@ uint8_t get_TemptureValue()
 	}
 	PA12 = 1;
 
-	adc_array[iner_temp_cnt][k]= (((2*temp23[iner_temp_cnt]) - temp13[iner_temp_cnt] - temp23[iner_temp_cnt])* 10000) / temp13[iner_temp_cnt] ; 
-
-	printf("DEBUG ADC AT %d [%d]",iner_temp_cnt+1, adc_array[iner_temp_cnt][k]);
-
+	if(get_i2sensor_status() == i2c_sensor_normal)
+	{
+		adc_array[iner_temp_cnt][k]= (((2*temp23[iner_temp_cnt]) - temp13[iner_temp_cnt] - temp23[iner_temp_cnt])* 10000) / temp13[iner_temp_cnt] ; 
+		printf("DEBUG ADC AT %d [%d]",iner_temp_cnt+1, adc_array[iner_temp_cnt][k]);
+	}
+	else if(get_i2sensor_status() == i2c_sensor_fail)
+	{
+		set_i2sensor_status(i2c_sensor_normal);
+	}
 
 
 	for( i=0 ; i < 15 ;i++)
