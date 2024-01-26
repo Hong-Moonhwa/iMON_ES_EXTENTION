@@ -1365,7 +1365,7 @@ void I2C_MasterRx(uint32_t u32Status)
 
 			 g_u8MstRxData[count_i] = (unsigned char) I2C_GET_DATA(I2C1);
 			 I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
-//			 printf("\n0x50 RX DATA : 0x%x\n",g_u8MstRxData[count_i]);
+	//		 printf("\n0x50 RX DATA : 0x%x\n",g_u8MstRxData[count_i]);
 			 count_i++;
 		 }
 		 else if(count_i==2)
@@ -1379,12 +1379,14 @@ void I2C_MasterRx(uint32_t u32Status)
 	else if(u32Status == 0x58)                  /* DATA has been received and NACK has been returned */
     {
   #if 1
+
+
 		 if(count_i != 2)
 		 {
 
 			 g_u8MstRxData[count_i] = (unsigned char) I2C_GET_DATA(I2C1);
 			 I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
-//			  printf("\n0x58 RX DATA : 0x%x\n",g_u8MstRxData[count_i]);
+	//		  printf("\n0x58 RX DATA : 0x%x\n",g_u8MstRxData[count_i]);
 			 count_i++;
 		 }
 		 else
@@ -1393,7 +1395,10 @@ void I2C_MasterRx(uint32_t u32Status)
 				 g_u8MstEndFlag = 1;
 		 }
 
-#else
+
+		 
+
+  #else
 		 g_u8MstRxData = (unsigned char) I2C_GET_DATA(I2C1);
 		 I2C_SET_CONTROL_REG(I2C1, I2C_CTL_STO_SI);
 		 g_u8MstEndFlag = 1;
@@ -1435,7 +1440,7 @@ void I2C_MasterRx(uint32_t u32Status)
         g_u8MstRxAbortFlag = 1;
 
         I2C_SET_CONTROL_REG(I2C0, I2C_CTL_SI);
-        u32TimeOutCnt =1000000 ;//I2C_TIMEOUT;
+        u32TimeOutCnt = 10000000;//I2C_TIMEOUT;
         while(I2C1->CTL & I2C_CTL_SI_Msk)
         {
             if(--u32TimeOutCnt == 0)
@@ -1468,8 +1473,6 @@ void I2C_MasterTx(uint32_t u32Status)
       //  	printf("\nTX DATA : 0x%x\n",g_au8MstTxData[g_u8MstDataLen]);
         I2C_SET_DATA(I2C1, g_au8MstTxData[g_u8MstDataLen++]);
         I2C_SET_CONTROL_REG(I2C1, I2C_CTL_SI);
-
-	//	Delay(10000);	
     }
     else if(u32Status == 0x20)                  /* SLA+W has been transmitted and NACK has been received */
     {
@@ -1602,7 +1605,6 @@ int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr)
                 g_u8MstReStartFlag = 1;
                 break;
             }
-			//Delay(1000);	
 
             /* I2C function to read data from slave */
             s_I2C1HandlerFn = (I2C_FUNC)I2C_MasterRx;
@@ -1737,10 +1739,8 @@ uint16_t ModBus_CRC16 ( const unsigned char *buf, unsigned int len )
 uint8_t get_TemptureValue()
 {
 	static uint8_t iner_temp_cnt = 0,k =0, printf_flag=0;
-	static uint16_t temp13[8], temp23[8], adc_array[8][20]={0x0,};	
+	static uint16_t temp[8], adc_array[8][20]={0x0,};	
 	static uint32_t raw_adc[8] = {0x0,};
-
-
 	uint8_t i;
 
 	/*
@@ -1758,17 +1758,16 @@ uint8_t get_TemptureValue()
 
 
 
-   uint16_t setup_data = ADS1115_CONFIG_REGISTER_OS_NO_EFFECT  | /* 0x8000  ADS1115_CONFIG_REGISTER_OS_SINGLE */
+   uint16_t setup_data = ADS1115_CONFIG_REGISTER_OS_SINGLE  | /* 0x8000  ADS1115_CONFIG_REGISTER_OS_SINGLE */
 			 ADS1115_CONFIG_REGISTER_PGA_2_048	  | 		 /* 0x0400 (default) ADS1115_CONFIG_REGISTER_PGA_2_048 */
-			 ADS1115_CONFIG_REGISTER_MODE_CONTINUE  | 		 /* 0x0100 (default)  ADS1115_CONFIG_REGISTER_MODE_SINGLE */  
+			 ADS1115_CONFIG_REGISTER_MODE_SINGLE  | 		 /* 0x0100 (default)  ADS1115_CONFIG_REGISTER_MODE_SINGLE */  
 			 ADS1115_CONFIG_REGISTER_DR_128_SPS   | 		 /* 0x0080 (default) ADS1115_CONFIG_REGISTER_DR_128_SPS */  
 			 ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR	|/* 0x0000 (default) ADS1115_CONFIG_REGISTER_COMP_MODE_TRADITIONAL_COMPARATOR */ 	 
 			 ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW |/* 0x0000 (default) ADS1115_CONFIG_REGISTER_COMP_POL_ACTIVE_LOW */ 
 			 ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		 |/* 0x0000 (default) ADS1115_CONFIG_REGISTER_COMP_LAT_NONE */ 
 			 ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	  /* 0x0003 (default) ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE */ 
 
-	temp13[iner_temp_cnt]=0;
-	temp23[iner_temp_cnt]=0;	
+	temp[iner_temp_cnt]=0;
 	raw_adc[iner_temp_cnt]=0;
 
 	PA15= (iner_temp_cnt & 0x04 ) >> 2;/* S2 */
@@ -1783,73 +1782,42 @@ uint8_t get_TemptureValue()
 	/* ############## ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3	*/
 	
 	g_au8MstTxData[0] = 0x01;
+	g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
 	g_au8MstTxData[2] = setup_data & 0x00FF;
-
-
-
-
 
 	if(get_SensorOnOff() == 1 )
 	{
 		PA12 = 0;
-		Delay(50000);			
 		PA->DOUT = (PA->DOUT|BIT1)&(~(1<<1));
 	
-			g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
 
 			if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
 			{
 			 	//printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
-//				printf("Diff 13  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
-				
-			 	//temp[iner_temp_cnt] = ((g_u8MstRxData[0] & 0xFF) * 256 + (g_u8MstRxData[1] & 0xFF));
-			 	temp13[iner_temp_cnt] = 0;
-				temp13[iner_temp_cnt] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
-#if 0			
+			 	temp[iner_temp_cnt] = ((g_u8MstRxData[0] & 0xFF) * 256 + (g_u8MstRxData[1] & 0xFF));
+		
+
 				if (temp[iner_temp_cnt] > 32767)
 			 	{
 					temp[iner_temp_cnt] -= 65535;
 				 }
-#endif			
-
-
-
-
-			}
-			else
-			{
-				//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
-			}
-
-			Delay(50000);
-
-			g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_2_3)  >> 8) & 0xFF ; /* Reset 0x06 */
-
-			if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
-			{
-//				printf("Diff 23  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
-				
-				temp23[iner_temp_cnt] = 0;
-				temp23[iner_temp_cnt] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
-			}
-			else
-			{
-				//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
-			}
-
 			
+
+			 	 adc_array[iner_temp_cnt][k]= temp[iner_temp_cnt];
+
+			}
+			else
+			{
+				//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
+			}
 	}
 	else
 	{
-		temp13[iner_temp_cnt] = 0x0;
-		temp23[iner_temp_cnt] = 0x0;
+		temp[iner_temp_cnt] = 0x0;
 		adc_array[iner_temp_cnt][k]=0x0;
 	}
 	PA12 = 1;
 
-	adc_array[iner_temp_cnt][k]= (((2*temp23[iner_temp_cnt]) - temp13[iner_temp_cnt] - temp23[iner_temp_cnt])* 10000) / temp13[iner_temp_cnt] ; 
-
-	printf("DEBUG ADC AT %d [%d]",iner_temp_cnt+1, adc_array[iner_temp_cnt][k]);
 
 
 
@@ -1859,22 +1827,17 @@ uint8_t get_TemptureValue()
 		// printf("DATA %d [%d]\n",i, adc_array[iner_temp_cnt][i]);
 	}
 
-
-
 	 raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] / 15 ;
 	if(k== (15 - 1) )
 	 {
 		 printf_flag = 1;
 	 }	 
-
-
-
-
+		
 	if(printf_flag==1)
 	 {
-		printf("At %d %d]", iner_temp_cnt+1,  raw_adc[iner_temp_cnt]);
+		printf("At %d [%d]", iner_temp_cnt+1,  raw_adc[iner_temp_cnt]);
 		
-#if 0
+#if 1
 
 
 		if(0 == get_SensorSelect())
@@ -2265,15 +2228,9 @@ int main(void)
 
 		
 
-#if 1
-		Delay(1000000);
 
-#else
 		Delay(50000);
-#endif
-		
-
-		
+		 
 		PA->DOUT = (PA->DOUT|BIT1)&(~(0<<1));
 
 		   
