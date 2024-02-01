@@ -1,5 +1,6 @@
 
 
+
 #define ADS1115_ADDRESS 0x48
 
 #define ADS1115_CONVERSION_REGISTER_ADDRESS	0x00
@@ -32,6 +33,461 @@
 #define ADS1115_CONFIG_REGISTER_DR_32_SPS	0x0040
 #define	ADS1115_CONFIG_REGISTER_DR_64_SPS	0x0060
 #define ADS1115_CONFIG_REGISTER_DR_128_SPS	0x0080//(default)
+#define ADS1115_CONFIG_REGISTER_DR_800_SPS  0x00E0
+
+
+
+#define PLLCTL_SETTING      CLK_PLLCTL_72MHz_HXT
+#define PLL_CLOCK           72000000
+
+enum comm_485_status {
+    comm_485_ready = 0 ,
+    comm_485_done = 1,
+    comm_485_error = 2
+};
+
+enum oil_level_status {
+    oil_level_ready = 2 ,
+    oil_level_normal = 1,
+    oil_level_warning = 0
+};
+
+
+enum i2c_sensor_status {
+    i2c_sensor_ready = 2 ,
+    i2c_sensor_normal = 1,
+    i2c_sensor_fail = 0
+};
+
+
+enum sensor_idx {
+    SENSOR_REDUCER_IDX1 = 0 ,
+    SENSOR_LINING1_IIDX2 = 1,
+    SENSOR_LINING2_IDX3 = 2,
+    SENSOR_BRKCOIL_IDX4 = 3
+};
+
+typedef void (*I2C_FUNC)(uint32_t u32Status);
+
+#define EXTEN_BD_TYPE 0x01
+
+float PID(float in);
+
+void set_i2sensor_status(uint8_t set_status);
+uint8_t get_i2sensor_status();
+void set_oillevel_status(uint8_t set_status);
+uint8_t get_oillevel_status();
+void set_485comm_status(uint8_t set_status);
+uint8_t get_485comm_status();
+
+void I2C0_IRQHandler(void);
+void TMR0_IRQHandler(void);
+void TMR1_IRQHandler(void);
+void UART0_IRQHandler(void);
+void SPI2_IRQHandler(void);
+int I2C_Reeceived_valid();
+void set_CRC16_faultfinder();
+int I2C_Transmit_made_test();
+void get_TemptureWarningCheck();
+int I2C_Transmit_clean();
+int I2C_Transmit_made();
+
+void I2C_SlaveTRx(uint32_t u32Status);
+void I2C1_IRQHandler(void);
+void SYS_Init(void);
+void Timer_Init(void);
+void SPI_Init(void);
+void UART_Init(void);
+void I2C0_Init(void);
+void I2C1_Init(void);
+void I2C_MasterRx(uint32_t u32Status);
+void I2C_MasterTx(uint32_t u32Status);
+int32_t I2C1_Read_Write_SLAVE(uint8_t slvaddr);
+void Delay(uint32_t delayCnt);
+void RS485_SendAddressByte(uint8_t u8data);
+void RS485_SendDataByte(uint8_t *pu8TxBuf, uint32_t u32WriteBytes);
+void RS485_ReadDataByte(uint8_t *puRTxBuf, uint32_t u32ReadBytes);
+uint16_t ModBus_CRC16 ( const unsigned char *buf, unsigned int len );
+uint8_t get_TemptureValue();
+uint8_t get_SensorSelect();
+uint8_t get_SensorOnOff();
+
+uint8_t get_Sensor4OnOff();
+uint8_t get_Sensor3OnOff();
+uint8_t get_Sensor2OnOff();
+uint8_t get_Sensor1OnOff();
+uint8_t get_PinOilLevelValue();
+uint8_t get_PinValue();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define ADS1115_CONFIG_REGISTER_DR_250_SPS	0x00A0
 #define ADS1115_CONFIG_REGISTER_DR_475_SPS	0x00C0
 #define ADS1115_CONFIG_REGISTER_DR_800_SPS	0x00E0

@@ -14,27 +14,7 @@
 #include "ADS1115.h"
 
 
-#define PLLCTL_SETTING      CLK_PLLCTL_72MHz_HXT
-#define PLL_CLOCK           72000000
 
-enum comm_485_status {
-    comm_485_ready = 0 ,
-    comm_485_done = 1,
-    comm_485_error = 2
-};
-
-enum oil_level_status {
-    oil_level_ready = 2 ,
-    oil_level_normal = 1,
-    oil_level_warning = 0
-};
-
-
-enum i2c_sensor_status {
-    i2c_sensor_ready = 2 ,
-    i2c_sensor_normal = 1,
-    i2c_sensor_fail = 0
-};
 
 static uint8_t g_comm_485_status = comm_485_ready;
 static uint8_t g_oil_level_status = oil_level_ready;
@@ -253,7 +233,7 @@ volatile uint32_t g_u32_spiRxDataCount;
 volatile uint32_t g_u32TxDataCount;
 volatile uint32_t g_485_flags=0;
 
-typedef void (*I2C_FUNC)(uint32_t u32Status);
+
 
 static I2C_FUNC s_I2C0HandlerFn = NULL;
 static I2C_FUNC s_I2C1HandlerFn = NULL;
@@ -559,7 +539,7 @@ void set_CRC16_faultfinder()
 
 }
 
-#define EXTEN_BD_TYPE 0x01
+
 int I2C_Transmit_made_test()
 {
 	static uint8_t toggle_upcnt = 0,toggle_downcnt = 1, toggle_value = 1, err_flag =0;
@@ -763,9 +743,14 @@ int I2C_Transmit_clean()
 		 g_au8SlvData[8] = 0x00;
 		 g_au8SlvData[9] = 0x3C;
 
-		 g_au8SlvData[10] = get_oillevel_status();
-
-		 
+		if(get_PinOilLevelValue() == 1)
+		{
+			g_au8SlvData[10] = get_oillevel_status();
+		}
+		else
+		{
+			g_au8SlvData[10] = 0xff;
+		}	 
 		 g_au8SlvData[11] = 0x00;   /* Tempeture */
 		 g_au8SlvData[12] = g_tempture_value[0]; 
 		 
@@ -779,16 +764,16 @@ int I2C_Transmit_clean()
 		 g_au8SlvData[18] = g_tempture_value[3];   
 		 
 		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
-		 g_au8SlvData[20] = g_tempture_value[4];
+		 g_au8SlvData[20] = 0xff;//g_tempture_value[4];
 		 
 		 g_au8SlvData[21] = 0x0;   /* Temp Tempeture */
-		 g_au8SlvData[22] = g_tempture_value[5];
+		 g_au8SlvData[22] = 0xff;//g_tempture_value[5];
 		 
 		 g_au8SlvData[23] = 0x0;  /* Temp Tempeture */
-		 g_au8SlvData[24] = g_tempture_value[6];
+		 g_au8SlvData[24] = 0xff;//g_tempture_value[6];
 		 
 		 g_au8SlvData[25] = 0x0;    /* Temp Tempeture */	
-		 g_au8SlvData[26] = g_tempture_value[7];
+		 g_au8SlvData[26] = 0xff;//g_tempture_value[7];
 		 
 		 g_au8SlvData[27] = 0x00;  /* Reserved */
 		 g_au8SlvData[28] = 0x00;  /* Reserved */
@@ -800,7 +785,12 @@ int I2C_Transmit_clean()
 		 g_au8SlvData[33] = 0x00; /* Board Minor Version */
 		 
 		 g_au8SlvData[34] = 0xf8;  /* EXT */
-		 
+
+	//	 printf("OIL[0x%x]T1[0x%x]T2[0x%x]T3[0x%x]T4[0x%x]",g_au8SlvData[10],\
+		 													g_au8SlvData[12],\
+		 													g_au8SlvData[14],\
+		 													g_au8SlvData[16],\
+		 													g_au8SlvData[18]);
 //		get_TemptureWarningCheck(); 
 }
 
@@ -820,9 +810,14 @@ int I2C_Transmit_made()
 		 g_au8SlvData[8] = 0x00;
 		 g_au8SlvData[9] = g_fault_RecvData[14];
 
-		 g_au8SlvData[10] = get_oillevel_status();
-
-		 
+		if(get_PinOilLevelValue() == 1)
+		{
+			g_au8SlvData[10] = get_oillevel_status();
+		}
+		else
+		{
+			g_au8SlvData[10] = 0xff;
+		}
 		 g_au8SlvData[11] = 0x00;   /* Tempeture */
 		 g_au8SlvData[12] = g_tempture_value[0]; 
 		 
@@ -836,16 +831,16 @@ int I2C_Transmit_made()
 		 g_au8SlvData[18] = g_tempture_value[3];   
 		 
 		 g_au8SlvData[19] = 0x0;  /* Temp Tempeture */
-		 g_au8SlvData[20] = g_tempture_value[4];
+		 g_au8SlvData[20] = 0xff;//g_tempture_value[4];
 		 
 		 g_au8SlvData[21] = 0x0;   /* Temp Tempeture */
-		 g_au8SlvData[22] = g_tempture_value[5];
+		 g_au8SlvData[22] = 0xff;//g_tempture_value[5];
 		 
 		 g_au8SlvData[23] = 0x0;  /* Temp Tempeture */
-		 g_au8SlvData[24] = g_tempture_value[6];
+		 g_au8SlvData[24] = 0xff;//g_tempture_value[6];
 		 
 		 g_au8SlvData[25] = 0x0;    /* Temp Tempeture */	
-		 g_au8SlvData[26] = g_tempture_value[7];
+		 g_au8SlvData[26] = 0xff;//g_tempture_value[7];
 		 
 		 g_au8SlvData[27] = 0x00;  /* Reserved */
 		 g_au8SlvData[28] = 0x00;  /* Reserved */
@@ -858,6 +853,11 @@ int I2C_Transmit_made()
 		 
 		 g_au8SlvData[34] = 0xf8;  /* EXT */
 		 
+		//printf("OIL[0x%x]T1[0x%x]T2[0x%x]T3[0x%x]T4[0x%x]",g_au8SlvData[10],\
+												   g_au8SlvData[12],\
+												   g_au8SlvData[14],\
+												   g_au8SlvData[16],\
+												   g_au8SlvData[18]);
 
 //		get_TemptureWarningCheck();
 
@@ -1760,6 +1760,7 @@ uint16_t ModBus_CRC16 ( const unsigned char *buf, unsigned int len )
 	
 }
 
+
 uint8_t get_TemptureValue()
 {
 	static uint8_t iner_temp_cnt = 0,k =0, printf_flag=0;
@@ -1793,13 +1794,7 @@ uint8_t get_TemptureValue()
 			 ADS1115_CONFIG_REGISTER_COMP_LAT_NONE		 |/* 0x0000 (default) ADS1115_CONFIG_REGISTER_COMP_LAT_NONE */ 
 			 ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE;	  /* 0x0003 (default) ADS1115_CONFIG_REGISTER_COMP_QUE_DISABLE */ 
 
-	temp13[iner_temp_cnt]=0;
-	temp23[iner_temp_cnt]=0;	
-	raw_adc[iner_temp_cnt]=0;
 
-	PA15= (iner_temp_cnt & 0x04 ) >> 2;/* S2 */
-	PA14= (iner_temp_cnt  & 0x02) >> 1;/* S1 */
-	PA13= iner_temp_cnt	& 0x1; /* S0 */
 	
 	if(k >= 15)
 	{
@@ -1815,10 +1810,20 @@ uint8_t get_TemptureValue()
 
 
 
-	if(get_SensorOnOff() == 1 )
+	if(get_Sensor1OnOff() == 1 )
 	{
+
+		temp13[SENSOR_REDUCER_IDX1]=0;
+		temp23[SENSOR_REDUCER_IDX1]=0;	
+		raw_adc[SENSOR_REDUCER_IDX1]=0;
+
+		PA15= (SENSOR_REDUCER_IDX1 & 0x04 ) >> 2;/* S2 */
+		PA14= (SENSOR_REDUCER_IDX1  & 0x02) >> 1;/* S1 */
+		PA13= SENSOR_REDUCER_IDX1	& 0x1; /* S0 */
+	
 		PA12 = 0;
 		Delay(50000);			
+
 		PA->DOUT = (PA->DOUT|BIT1)&(~(1<<1));
 	
 			g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
@@ -1828,8 +1833,8 @@ uint8_t get_TemptureValue()
 			 	//printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
 //				printf("Diff 13  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
 				
-			 	temp13[iner_temp_cnt] = 0;
-				temp13[iner_temp_cnt] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
+			 	temp13[SENSOR_REDUCER_IDX1] = 0;
+				temp13[SENSOR_REDUCER_IDX1] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
 
 			}
 			else
@@ -1847,147 +1852,466 @@ uint8_t get_TemptureValue()
 			{
 //				printf("Diff 23  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
 				
-				temp23[iner_temp_cnt] = 0;
-				temp23[iner_temp_cnt] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
+				temp23[SENSOR_REDUCER_IDX1] = 0;
+				temp23[SENSOR_REDUCER_IDX1] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
 			}
 			else
 			{
 				//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
 			}
 
+
+
+			if(get_i2sensor_status() == i2c_sensor_normal)
+			{
+				adc_array[SENSOR_REDUCER_IDX1][k]= (((2*temp23[SENSOR_REDUCER_IDX1]) - temp13[SENSOR_REDUCER_IDX1] - temp23[SENSOR_REDUCER_IDX1])* 10000) / temp13[SENSOR_REDUCER_IDX1] ; 
+				printf("SENSOR_REDUCER_IDX1 ADC %d. [%d]",SENSOR_REDUCER_IDX1+1, adc_array[SENSOR_REDUCER_IDX1][k]);
+			}
+			else if(get_i2sensor_status() == i2c_sensor_fail)
+			{
+				set_i2sensor_status(i2c_sensor_normal);
+			}
+
+
+			for( i=0 ; i < 15 ;i++)
+			{
+				 raw_adc[SENSOR_REDUCER_IDX1] = raw_adc[SENSOR_REDUCER_IDX1] + adc_array[SENSOR_REDUCER_IDX1][i];
+				// printf("DATA %d [%d]\n",i, adc_array[iner_temp_cnt][i]);
+			}
+
+
+
+			 raw_adc[SENSOR_REDUCER_IDX1] = raw_adc[SENSOR_REDUCER_IDX1] / 15 ;
+			if(k== (15 - 1) )
+			 {
+				 printf_flag = 1;
+			 }	 
+
+
+
+
+			if(printf_flag==1)
+			 {
+				printf(" [Avg: %d]",  raw_adc[SENSOR_REDUCER_IDX1]);
+				
+
+
+				 if(raw_adc[SENSOR_REDUCER_IDX1] > pt100_table[200])
+				 {
+					raw_adc[SENSOR_REDUCER_IDX1] = pt100_table[200];
+				 }
+				 else if(raw_adc[SENSOR_REDUCER_IDX1] < pt100_table[0])
+				 {
+					raw_adc[SENSOR_REDUCER_IDX1] = pt100_table[0];
+
+				 }
+
+
+				 for(i=0 ; i < 201 ; i++)
+				 {
+				 	if(raw_adc[SENSOR_REDUCER_IDX1] < pt100_table[i])
+				 	{
+				 		g_tempture_value[SENSOR_REDUCER_IDX1] =i;
+						break;
+				 	}
+				 }
+
+			
+			     printf(" Real [%d] C\n",  g_tempture_value[SENSOR_REDUCER_IDX1]);
+			 }
+			
+
 			
 	}
 	else
 	{
-		temp13[iner_temp_cnt] = 0x0;
-		temp23[iner_temp_cnt] = 0x0;
-		adc_array[iner_temp_cnt][k]=0x0;
+		temp13[SENSOR_REDUCER_IDX1] = 0x0;
+		temp23[SENSOR_REDUCER_IDX1] = 0x0;
+		adc_array[SENSOR_REDUCER_IDX1][k]=0x0;
+		g_tempture_value[SENSOR_REDUCER_IDX1]=0xff;
+		//printf(" SENSOR_REDUCER_IDX1 Disabled\n");
 	}
 	PA12 = 1;
 
-	if(get_i2sensor_status() == i2c_sensor_normal)
-	{
-		adc_array[iner_temp_cnt][k]= (((2*temp23[iner_temp_cnt]) - temp13[iner_temp_cnt] - temp23[iner_temp_cnt])* 10000) / temp13[iner_temp_cnt] ; 
-		printf("One Point ADC %d. [%d]",iner_temp_cnt+1, adc_array[iner_temp_cnt][k]);
-	}
-	else if(get_i2sensor_status() == i2c_sensor_fail)
-	{
-		set_i2sensor_status(i2c_sensor_normal);
-	}
 
-
-	for( i=0 ; i < 15 ;i++)
-	{
-		 raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] + adc_array[iner_temp_cnt][i];
-		// printf("DATA %d [%d]\n",i, adc_array[iner_temp_cnt][i]);
-	}
-
-
-
-	 raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] / 15 ;
-	if(k== (15 - 1) )
-	 {
-		 printf_flag = 1;
-	 }	 
-
-
-
-
-	if(printf_flag==1)
-	 {
-		printf(" [Avg: %d]",  raw_adc[iner_temp_cnt]);
+	
+		if(get_Sensor2OnOff() == 1 )
+		{
+	
+			temp13[SENSOR_LINING1_IIDX2]=0;
+			temp23[SENSOR_LINING1_IIDX2]=0;	
+			raw_adc[SENSOR_LINING1_IIDX2]=0;
+	
+			PA15= (SENSOR_LINING1_IIDX2 & 0x04 ) >> 2;/* S2 */
+			PA14= (SENSOR_LINING1_IIDX2  & 0x02) >> 1;/* S1 */
+			PA13= SENSOR_LINING1_IIDX2 & 0x1; /* S0 */
 		
-#if 0
-
-
-		if(0 == get_SensorSelect())
-		{
-			 for(i=0 ; i < 201 ; i++)
-			 {
-			 	if(raw_adc[iner_temp_cnt] < pt100_compare_1table[i])
-			 	{
-			 		raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] - pt100_margin_1table[i] ;
-					break;
-			 	}
-			 }
-		}
-		else if(1 == get_SensorSelect())
-		{
-			 for(i=0 ; i < 201 ; i++)
-			 {
-			 	if(raw_adc[iner_temp_cnt] < pt100_compare_2table[i])
-			 	{
-			 		raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] - pt100_margin_2table[i] ;
-					break;
-			 	}
-			 }
-		}
-		else if(2 == get_SensorSelect())
-		{
-			 for(i=0 ; i < 201 ; i++)
-			 {
-			 	if(raw_adc[iner_temp_cnt] < pt100_compare_1table[i])
-			 	{
-			 		raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] - pt100_margin_1table[i] ;
-					break;
-			 	}
-			 }
-		}		
-		else if(3 == get_SensorSelect())
-		{
-			 for(i=0 ; i < 201 ; i++)
-			 {
-			 	if(raw_adc[iner_temp_cnt] < pt100_compare_4table[i])
-			 	{
-			 		raw_adc[iner_temp_cnt] = raw_adc[iner_temp_cnt] - pt100_margin_4table[i] ;
-					break;
-			 	}
-			 }
+			PA12 = 0;
+			Delay(50000);			
+	
+			PA->DOUT = (PA->DOUT|BIT1)&(~(1<<1));
+		
+				g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
+	
+				if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
+				{
+					//printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
+	//				printf("Diff 13  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
+					
+					temp13[SENSOR_LINING1_IIDX2] = 0;
+					temp13[SENSOR_LINING1_IIDX2] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
+	
+				}
+				else
+				{
+					//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
+				}
+	
+	
+	
+				Delay(50000);
+	
+				g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_2_3)  >> 8) & 0xFF ; /* Reset 0x06 */
+	
+				if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
+				{
+	//				printf("Diff 23  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
+					
+					temp23[SENSOR_LINING1_IIDX2] = 0;
+					temp23[SENSOR_LINING1_IIDX2] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
+				}
+				else
+				{
+					//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
+				}
+	
+	
+	
+				if(get_i2sensor_status() == i2c_sensor_normal)
+				{
+					adc_array[SENSOR_LINING1_IIDX2][k]= (((2*temp23[SENSOR_LINING1_IIDX2]) - temp13[SENSOR_LINING1_IIDX2] - temp23[SENSOR_LINING1_IIDX2])* 10000) / temp13[SENSOR_LINING1_IIDX2] ; 
+					printf("SENSOR_LINING1_IIDX2 ADC %d. [%d]",SENSOR_LINING1_IIDX2+1, adc_array[SENSOR_LINING1_IIDX2][k]);
+				}
+				else if(get_i2sensor_status() == i2c_sensor_fail)
+				{
+					set_i2sensor_status(i2c_sensor_normal);
+				}
+	
+	
+				for( i=0 ; i < 15 ;i++)
+				{
+					 raw_adc[SENSOR_LINING1_IIDX2] = raw_adc[SENSOR_LINING1_IIDX2] + adc_array[SENSOR_LINING1_IIDX2][i];
+					// printf("DATA %d [%d]\n",i, adc_array[iner_temp_cnt][i]);
+				}
+	
+	
+	
+				 raw_adc[SENSOR_LINING1_IIDX2] = raw_adc[SENSOR_LINING1_IIDX2] / 15 ;
+				if(k== (15 - 1) )
+				 {
+					 printf_flag = 1;
+				 }	 
+	
+	
+	
+	
+				if(printf_flag==1)
+				 {
+					printf(" [Avg: %d]",  raw_adc[SENSOR_LINING1_IIDX2]);
+					
+	
+	
+					 if(raw_adc[SENSOR_LINING1_IIDX2] > pt100_table[200])
+					 {
+						raw_adc[SENSOR_LINING1_IIDX2] = pt100_table[200];
+					 }
+					 else if(raw_adc[SENSOR_LINING1_IIDX2] < pt100_table[0])
+					 {
+						raw_adc[SENSOR_LINING1_IIDX2] = pt100_table[0];
+	
+					 }
+	
+	
+					 for(i=0 ; i < 201 ; i++)
+					 {
+						if(raw_adc[SENSOR_LINING1_IIDX2] < pt100_table[i])
+						{
+							g_tempture_value[SENSOR_LINING1_IIDX2] =i;
+							break;
+						}
+					 }
+	
+				
+					 printf(" Real [%d] C\n",  g_tempture_value[SENSOR_LINING1_IIDX2]);
+				 }
+				
+	
+				
 		}
 		else
 		{
-			/* Blank Not Supported */
-		}	
+			temp13[SENSOR_LINING1_IIDX2] = 0x0;
+			temp23[SENSOR_LINING1_IIDX2] = 0x0;
+			adc_array[SENSOR_LINING1_IIDX2][k]=0x0;
+			g_tempture_value[SENSOR_LINING1_IIDX2]=0xff;
+			//printf(" SENSOR_REDUCER_IDX1 Disabled\n");
+
+		}
+		PA12 = 1;
+	
+
+		if(get_Sensor3OnOff() == 1 )
+		{
+	
+			temp13[SENSOR_LINING2_IDX3]=0;
+			temp23[SENSOR_LINING2_IDX3]=0;	
+			raw_adc[SENSOR_LINING2_IDX3]=0;
+	
+			PA15= (SENSOR_LINING2_IDX3 & 0x04 ) >> 2;/* S2 */
+			PA14= (SENSOR_LINING2_IDX3  & 0x02) >> 1;/* S1 */
+			PA13= SENSOR_LINING2_IDX3 & 0x1; /* S0 */
+		
+			PA12 = 0;
+			Delay(50000);			
+	
+			PA->DOUT = (PA->DOUT|BIT1)&(~(1<<1));
+		
+				g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
+	
+				if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
+				{
+					//printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
+	//				printf("Diff 13  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
+					
+					temp13[SENSOR_LINING2_IDX3] = 0;
+					temp13[SENSOR_LINING2_IDX3] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
+	
+				}
+				else
+				{
+					//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
+				}
+	
+	
+	
+				Delay(50000);
+	
+				g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_2_3)  >> 8) & 0xFF ; /* Reset 0x06 */
+	
+				if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
+				{
+	//				printf("Diff 23  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
+					
+					temp23[SENSOR_LINING2_IDX3] = 0;
+					temp23[SENSOR_LINING2_IDX3] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
+				}
+				else
+				{
+					//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
+				}
+	
+	
+	
+				if(get_i2sensor_status() == i2c_sensor_normal)
+				{
+					adc_array[SENSOR_LINING2_IDX3][k]= (((2*temp23[SENSOR_LINING2_IDX3]) - temp13[SENSOR_LINING2_IDX3] - temp23[SENSOR_LINING2_IDX3])* 10000) / temp13[SENSOR_LINING2_IDX3] ; 
+					printf("SENSOR_LINING2_IDX3 ADC %d. [%d]",SENSOR_LINING2_IDX3+1, adc_array[SENSOR_LINING2_IDX3][k]);
+				}
+				else if(get_i2sensor_status() == i2c_sensor_fail)
+				{
+					set_i2sensor_status(i2c_sensor_normal);
+				}
+	
+	
+				for( i=0 ; i < 15 ;i++)
+				{
+					 raw_adc[SENSOR_LINING2_IDX3] = raw_adc[SENSOR_LINING2_IDX3] + adc_array[SENSOR_LINING2_IDX3][i];
+					// printf("DATA %d [%d]\n",i, adc_array[iner_temp_cnt][i]);
+				}
+	
+	
+	
+				 raw_adc[SENSOR_LINING2_IDX3] = raw_adc[SENSOR_LINING2_IDX3] / 15 ;
+				if(k== (15 - 1) )
+				 {
+					 printf_flag = 1;
+				 }	 
+	
+	
+	
+	
+				if(printf_flag==1)
+				 {
+					printf(" [Avg: %d]",  raw_adc[SENSOR_LINING2_IDX3]);
+					
+	
+	
+					 if(raw_adc[SENSOR_LINING2_IDX3] > pt100_table[200])
+					 {
+						raw_adc[SENSOR_LINING2_IDX3] = pt100_table[200];
+					 }
+					 else if(raw_adc[SENSOR_LINING2_IDX3] < pt100_table[0])
+					 {
+						raw_adc[SENSOR_LINING2_IDX3] = pt100_table[0];
+	
+					 }
+	
+	
+					 for(i=0 ; i < 201 ; i++)
+					 {
+						if(raw_adc[SENSOR_LINING2_IDX3] < pt100_table[i])
+						{
+							g_tempture_value[SENSOR_LINING2_IDX3] =i;
+							break;
+						}
+					 }
+	
 				
-#endif
-
-		 if(raw_adc[iner_temp_cnt] > pt100_table[200])
-		 {
-			raw_adc[iner_temp_cnt] = pt100_table[200];
-		 }
-		 else if(raw_adc[iner_temp_cnt] < pt100_table[0])
-		 {
-			raw_adc[iner_temp_cnt] = pt100_table[0];
-
-		 }
-
-
-		 for(i=0 ; i < 201 ; i++)
-		 {
-		 	if(raw_adc[iner_temp_cnt] < pt100_table[i])
-		 	{
-		 		g_tempture_value[iner_temp_cnt] =i;
-				break;
-		 	}
-		 }
-
+					 printf(" Real [%d] C\n",  g_tempture_value[SENSOR_LINING2_IDX3]);
+				 }
+				
 	
-	     printf(" Real [%d] C\n",  g_tempture_value[iner_temp_cnt]);
-	 }
-	
+				
+		}
+		else
+		{
+			temp13[SENSOR_LINING2_IDX3] = 0x0;
+			temp23[SENSOR_LINING2_IDX3] = 0x0;
+			adc_array[SENSOR_LINING2_IDX3][k]=0x0;
+			g_tempture_value[SENSOR_LINING2_IDX3]=0xff;
+			//printf(" SENSOR_REDUCER_IDX1 Disabled\n");
+		}
+		PA12 = 1;
 	
 
+		if(get_Sensor4OnOff() == 1 )
+		{
+	
+			temp13[SENSOR_BRKCOIL_IDX4]=0;
+			temp23[SENSOR_BRKCOIL_IDX4]=0;	
+			raw_adc[SENSOR_BRKCOIL_IDX4]=0;
+	
+			PA15= (SENSOR_BRKCOIL_IDX4 & 0x04 ) >> 2;/* S2 */
+			PA14= (SENSOR_BRKCOIL_IDX4  & 0x02) >> 1;/* S1 */
+			PA13= SENSOR_BRKCOIL_IDX4 & 0x1; /* S0 */
+		
+			PA12 = 0;
+			Delay(50000);			
+	
+			PA->DOUT = (PA->DOUT|BIT1)&(~(1<<1));
+		
+				g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_1_3)  >> 8) & 0xFF ; /* Reset 0x06 */
+	
+				if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
+				{
+					//printf("\n######################RX	RX	RX	 DATA : [0x%02x][0x%02x]\n",g_u8MstRxData[0],g_u8MstRxData[1]);
+	//				printf("Diff 13  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
+					
+					temp13[SENSOR_BRKCOIL_IDX4] = 0;
+					temp13[SENSOR_BRKCOIL_IDX4] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
+	
+				}
+				else
+				{
+					//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
+				}
+	
+	
+	
+				Delay(50000);
+	
+				g_au8MstTxData[1] = ((setup_data | ADS1115_CONFIG_REGISTER_MUX_DIFF_2_3)  >> 8) & 0xFF ; /* Reset 0x06 */
+	
+				if(I2C1_Read_Write_SLAVE(ADS1115_ADDRESS) == 0)
+				{
+	//				printf("Diff 23  %02x:%02x\n",g_u8MstRxData[0], g_u8MstRxData[1] );
+					
+					temp23[SENSOR_BRKCOIL_IDX4] = 0;
+					temp23[SENSOR_BRKCOIL_IDX4] = ((g_u8MstRxData[0] << 8 ) & 0xFF00)  + g_u8MstRxData[1] ;
+				}
+				else
+				{
+					//printf("TEMP At %d:%d  [%d Real Data[%d]\n",iner_temp_cnt, k, 	temp[iner_temp_cnt], adc_array[iner_temp_cnt][k]);
+				}
+	
+	
+	
+				if(get_i2sensor_status() == i2c_sensor_normal)
+				{
+					adc_array[SENSOR_BRKCOIL_IDX4][k]= (((2*temp23[SENSOR_BRKCOIL_IDX4]) - temp13[SENSOR_BRKCOIL_IDX4] - temp23[SENSOR_BRKCOIL_IDX4])* 10000) / temp13[SENSOR_BRKCOIL_IDX4] ; 
+					printf("SENSOR_BRKCOIL_IDX4 ADC %d. [%d]",SENSOR_BRKCOIL_IDX4+1, adc_array[SENSOR_BRKCOIL_IDX4][k]);
+				}
+				else if(get_i2sensor_status() == i2c_sensor_fail)
+				{
+					set_i2sensor_status(i2c_sensor_normal);
+				}
+	
+	
+				for( i=0 ; i < 15 ;i++)
+				{
+					 raw_adc[SENSOR_BRKCOIL_IDX4] = raw_adc[SENSOR_BRKCOIL_IDX4] + adc_array[SENSOR_BRKCOIL_IDX4][i];
+					// printf("DATA %d [%d]\n",i, adc_array[iner_temp_cnt][i]);
+				}
+	
+	
+	
+				 raw_adc[SENSOR_BRKCOIL_IDX4] = raw_adc[SENSOR_BRKCOIL_IDX4] / 15 ;
+				if(k== (15 - 1) )
+				 {
+					 printf_flag = 1;
+				 }	 
+	
+	
+	
+	
+				if(printf_flag==1)
+				 {
+					printf(" [Avg: %d]",  raw_adc[SENSOR_BRKCOIL_IDX4]);
+					
+	
+	
+					 if(raw_adc[SENSOR_BRKCOIL_IDX4] > pt100_table[200])
+					 {
+						raw_adc[SENSOR_BRKCOIL_IDX4] = pt100_table[200];
+					 }
+					 else if(raw_adc[SENSOR_BRKCOIL_IDX4] < pt100_table[0])
+					 {
+						raw_adc[SENSOR_BRKCOIL_IDX4] = pt100_table[0];
+	
+					 }
+	
+	
+					 for(i=0 ; i < 201 ; i++)
+					 {
+						if(raw_adc[SENSOR_BRKCOIL_IDX4] < pt100_table[i])
+						{
+							g_tempture_value[SENSOR_BRKCOIL_IDX4] =i;
+							break;
+						}
+					 }
+	
+				
+					 printf(" Real [%d] C\n",  g_tempture_value[SENSOR_BRKCOIL_IDX4]);
+				 }
+				
+	
+				
+		}
+		else
+		{
+			temp13[SENSOR_BRKCOIL_IDX4] = 0x0;
+			temp23[SENSOR_BRKCOIL_IDX4] = 0x0;
+			adc_array[SENSOR_BRKCOIL_IDX4][k]=0x0;
+			g_tempture_value[SENSOR_BRKCOIL_IDX4]=0xff;
+			//printf(" SENSOR_REDUCER_IDX1 Disabled\n");
+		}
+		PA12 = 1;
+	
 
-	if(iner_temp_cnt >=get_SensorSelect())
-	{
-		printf("\n");
-		iner_temp_cnt = 0;
-		k++;
-	}
-	else
-	{
-		iner_temp_cnt++;
-	}
+	printf("\n");
+
+	k++;
+
 
 
 
@@ -2029,19 +2353,79 @@ uint8_t get_SensorOnOff()
 }
 
 
+
+uint8_t get_Sensor4OnOff()
+{
+	uint8_t pin_array=0x0;
+
+	pin_array = 0x01  & (0x1  & ~PB0) ;
+
+	
+	return pin_array;
+
+}
+
+
+
+uint8_t get_Sensor3OnOff()
+{
+	uint8_t pin_array=0x0;
+
+	pin_array = 0x01  & (0x1  & ~PB1) ;
+
+	
+	return pin_array;
+
+}
+
+
+uint8_t get_Sensor2OnOff()
+{
+	uint8_t pin_array=0x0;
+
+	pin_array = 0x01  & (0x1  & ~PB2) ;
+
+	
+	return pin_array;
+
+}
+
+
+uint8_t get_Sensor1OnOff()
+{
+	uint8_t pin_array=0x0;
+
+	pin_array = 0x01  & (0x1  & ~PB3) ;
+
+	
+	return pin_array;
+
+}
+
+
+uint8_t get_PinOilLevelValue()
+{
+	uint8_t pin_array=0x0;
+
+	pin_array = 0x01  & (0x1  & ~PB4) ;
+
+	
+	return pin_array;
+
+
+}
+
+
 uint8_t get_PinValue()
 {
-	uint8_t pin_array[5]={0x0,},get_pin_value=0;
+	uint8_t pin_array[3]={0x0,},get_pin_value=0;
 
 
-
-	pin_array[3]= 0x08  & ((0x1  & ~PB4) << 3 );
 	pin_array[2]= 0x04  & ((0x1  & ~PB5) << 2 );
 	pin_array[1]= 0x02  & ((0x1  & ~PB6) << 1 );
 	pin_array[0]= 0x01  & (0x1  & ~PB7 );
 
-	get_pin_value = pin_array[3] | \
-					pin_array[2] | \
+	get_pin_value = pin_array[2] | \
 					pin_array[1] | \
 					pin_array[0];
 
@@ -2295,7 +2679,7 @@ int main(void)
 		}
 		else
 		{		
-				if(local_count == 20)
+				if(local_count == 3)
 				{
 					printf("OIL Level DIN1 Warning\n");// DIN1
 				}
@@ -2308,7 +2692,7 @@ int main(void)
 		
 
 #if 1
-		Delay(1000000);
+		Delay(200000);
 
 #else
 		Delay(50000);
