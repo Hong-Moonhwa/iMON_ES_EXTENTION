@@ -1825,7 +1825,7 @@ uint8_t get_TemptureValue()
 				if(get_i2sensor_status() == i2c_sensor_normal)
 				{
 					adc_array[SENSOR_LINING1_IIDX2][k]= (((2*temp23[SENSOR_LINING1_IIDX2]) - temp13[SENSOR_LINING1_IIDX2] - temp23[SENSOR_LINING1_IIDX2])* 10000) / temp13[SENSOR_LINING1_IIDX2] ; 
-					printf("SENSOR_LINING1_IIDX2 ADC %d. [%d]",SENSOR_LINING1_IIDX2+1, adc_array[SENSOR_LINING1_IIDX2][k]);
+					printf("SENSOR_LINING1_IDX2 ADC %d. [%d]",SENSOR_LINING1_IIDX2+1, adc_array[SENSOR_LINING1_IIDX2][k]);
 				}
 				else if(get_i2sensor_status() == i2c_sensor_fail)
 				{
