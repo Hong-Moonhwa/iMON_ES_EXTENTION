@@ -39,7 +39,7 @@
 
 #define PLLCTL_SETTING      CLK_PLLCTL_72MHz_HXT
 #define PLL_CLOCK           72000000
-
+#define FF_WA_CODE	0x65 //101
 enum comm_485_status {
     comm_485_ready = 0 ,
     comm_485_done = 1,

@@ -576,7 +576,7 @@ int I2C_Transmit_clean()
 
 
 		 g_au8SlvData[8] = 0x00;
-		 g_au8SlvData[9] = 0x3C;
+		 g_au8SlvData[9] = FF_WA_CODE;
 
 		if(get_PinOilLevelValue() == 1)
 		{
